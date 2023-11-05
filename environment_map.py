@@ -51,23 +51,20 @@ class EnvironmentMap(CubeMap):
         self.height = height
 
         self.fbos = {
-            gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: Framebuffer(width, height, [gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT0]),
-            gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X: Framebuffer(width, height, [gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT0]),
-            gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: Framebuffer(width, height, [gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT0]),
-            gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: Framebuffer(width, height, [gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT0]),
-            gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: Framebuffer(width, height, [gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT0]),
-            gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z: Framebuffer(width, height, [gl.GL_COLOR_ATTACHMENT0, gl.GL_COLOR_ATTACHMENT0])
+            gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: Framebuffer(width, height),
+            gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X: Framebuffer(width, height),
+            gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Y: Framebuffer(width, height),
+            gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Y: Framebuffer(width, height),
+            gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: Framebuffer(width, height),
+            gl.GL_TEXTURE_CUBE_MAP_POSITIVE_Z: Framebuffer(width, height)
         }
         self.P = np.array(glm.frustum(-1, +1, -1, +1, 1, 20))
         self.views = self.calculate_camera_views()
 
-        self.textures = []
-
         self._bind()
         for (face, fbo) in self.fbos.items():
             gl.glTexImage2D(face, 0, self.format, width, height, 0, self.format, self.type, None)
-            self.textures.append(FramebufferTexture(width, height, str(face)))
-            fbo.prepare([self, self.textures[-1]], [face, self.textures[-1].target])
+            fbo.prepare([self], [face])
         self.unbind()
 
     def update(self, scene):
