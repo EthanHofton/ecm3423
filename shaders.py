@@ -216,6 +216,8 @@ class BaseShaderProgram:
 
             self.uniforms[texture.uniform].bind(unit)
 
+        texture_size = len(model.mesh.textures)
+
         if 'material.has_texture' not in self.uniforms.keys():
             self.add_uniform('material.has_texture')
             self.uniforms['material.has_texture'].link(self.program)
@@ -225,12 +227,15 @@ class BaseShaderProgram:
                 self.add_uniform('material.textureObject')
                 self.uniforms['material.textureObject'].link(self.program)
 
-            unit = len(model.mesh.textures)
+            unit = texture_size
+            texture_size += 1
             model.mesh.material.texture.bind(unit)
             self.uniforms['material.textureObject'].bind(unit)
             self.uniforms['material.has_texture'].bind(1)
         else:
             self.uniforms['material.has_texture'].bind(0)
+
+        return texture_size
 
 class PhongShader(BaseShaderProgram):
     '''

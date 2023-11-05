@@ -4,27 +4,33 @@ import glm
 
 from scene import Scene
 from model import ModelFromMesh
-from mesh import CubeMesh, SquareMesh
-from shaders import PhongShader, BaseShaderProgram
+from mesh import CubeMesh, SquareMesh, SphereMesh
+from shaders import PhongShader
 from light import LightSource
-from texture import Texture
 from model_loader import ModelLoader
+from fbo import Framebuffer, FramebufferTexture
+from skybox import SkyBox
+from environment_map import EnvironmentMap, EnvironmentShader
 
 class Sandbox(Scene):
 
     def __init__(self):
         Scene.__init__(self, 1200, 800, "Sandbox")
+        model_loader = ModelLoader()
 
         self.lights.append(LightSource(self))
         self.lights.append(LightSource(self))
 
-        tex = Texture('test.png', 'test_texture_sampler')
 
-        self.models.append(ModelFromMesh(self, CubeMesh(), shader=PhongShader()))
-        # self.models.append(ModelFromMesh(self, CubeMesh(), shader=PhongShader()))
-        # self.models.append(ModelFromMesh(self, SquareMesh(texture=tex), shader=BaseShaderProgram('simple_texture')))
-        # model_loader = ModelLoader()
-        # self.models.append(ModelFromMesh(self, model_loader.load_model('bunny/bunny.obj')[0], shader=PhongShader()))
+        self.models.append(ModelFromMesh(self, model_loader.load_model('bunny/bunny.obj')[0], shader=PhongShader()))
+        self.models[-1].M.translate([-5,0,0])
+
+        self.skybox = SkyBox(self, 'skybox/sb_frozendusk', extension='jpg')
+
+        self.env_map = EnvironmentMap()
+
+        self.sphere = ModelFromMesh(self, SphereMesh(), shader=EnvironmentShader(map=self.env_map))
+        self.sphere.M.scale([2,2,2])
 
         self.trans = [0, 0, 0]
         self.rot_axis = [0, 0, 0]
@@ -35,20 +41,27 @@ class Sandbox(Scene):
         if not framebuffer:
             # clear the screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-            # update the camera
+
+        self.draw_reflections()
+
+        if not framebuffer:
+
+            self.env_map.update(self)
+            self.sphere.draw()
+
+            for index, light in enumerate(self.lights):
+                self.imgui_light_settings(light, index)
+
+            for index, model in enumerate(self.models):
+                self.imgui_model_settings(model, index)
+
+            imgui.show_metrics_window()
+
+    def draw_reflections(self):
+        self.skybox.draw()
 
         for model in self.models:
             model.draw()
-
-        for index, light in enumerate(self.lights):
-            self.imgui_light_settings(light, index)
-
-        for index, model in enumerate(self.models):
-            self.imgui_model_settings(model, index)
-
-        imgui.show_metrics_window()
-
-
         
     def imgui_light_settings(self, light, index):
         imgui.begin(f"Light Source {index}")
@@ -80,6 +93,7 @@ class Sandbox(Scene):
             model.M.rotate(self.rot_axis, glm.radians(self.rot_angle))
             model.M.scale(self.scale)
 
+        if imgui.button("reset"):
             self.trans = [0, 0, 0]
             self.rot_axis = [0, 0, 0]
             self.rot_angle = 0

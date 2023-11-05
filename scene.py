@@ -13,6 +13,8 @@ class Scene():
 
     def __init__(self, width=800, height=600, title="untitled"):
         self.window_size = (width, height)
+        self.width = width
+        self.height = height
         self.wireframe = False
         self.title = title
 
@@ -27,8 +29,6 @@ class Scene():
         glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, gl.GL_TRUE)
         glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
 
-        self.framebuffer_scale = 2.0
-        
         # create the window
         self._window = glfw.create_window(width, height, title, None, None)
 
@@ -45,7 +45,8 @@ class Scene():
 
         # opengl options
         # Here we start initialising the window from the OpenGL side
-        gl.glViewport(0, 0, int(self.window_size[0] * self.framebuffer_scale), int(self.window_size[1] * self.framebuffer_scale))
+        print(self.get_window_framebuffer_size())
+        gl.glViewport(0, 0, int(self.get_window_framebuffer_size()[0]), int(self.get_window_framebuffer_size()[1]))
 
         # this selects the background color
         gl.glClearColor(0.7, 0.7, 1.0, 1.0)
@@ -55,7 +56,7 @@ class Scene():
         # depending on your model, or your projection matrix, the winding order may be inverted,
         # Typically, you see the far side of the model instead of the front one
         # uncommenting the following line should provide an easy fix.
-        #glCullFace(GL_FRONT)
+        # gl.glCullFace(gl.GL_FRONT)
 
         # enable depth test for clean output (see lecture on clipping & visibility for an explanation
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -127,3 +128,7 @@ class Scene():
             self.impl.render(imgui.get_draw_data())
             # swap the buffers
             glfw.swap_buffers(self._window)
+
+
+    def get_window_framebuffer_size(self):
+        return glfw.get_framebuffer_size(self._window)

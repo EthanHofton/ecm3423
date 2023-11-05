@@ -110,3 +110,6 @@ class Texture:
 
     def _bind(self):
         gl.glBindTexture(self.target, self.textureid)
+
+    def __del__(self):
+        gl.glDeleteTextures([self.textureid])
