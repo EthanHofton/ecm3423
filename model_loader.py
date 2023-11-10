@@ -15,12 +15,13 @@ class ModelLoader:
         with assimp.load(f"models/{path}", processing=processing) as scene:
             for mesh in scene.meshes:
                 faces = mesh.faces
-                texCoords = mesh.texturecoords 
+                texCoords = mesh.texturecoords if mesh.texturecoords.any() else None
                 vertices = mesh.vertices
-                normals = mesh.normals
+                normals = mesh.normals if mesh.normals.any() else None
                 m = mesh.material
 
-                texName = m.properties['file', 1]
+                # texName = m.properties['file', 1]
+                texName = None
 
                 material = Material(
                     Ka=np.array(m.properties['ambient'], dtype=np.float32),

@@ -95,10 +95,16 @@ class BaseModel():
 
             self.vao.bind()
 
-            self.shader.bind(
-                model=self,
-                M=np.matmul(np.array(M.get_transform()), np.array(self.M.get_transform()))
-            )
+            if M == TransformMatrix():
+                self.shader.bind(
+                    model=self,
+                    M=np.array(self.M.get_transform())
+                )
+            else:
+                self.shader.bind(
+                    model=self,
+                    M=np.matmul(np.array(M.get_transform()), np.array(self.M.get_transform()))
+                )
 
             if self.ibo is None:
                 gl.glDrawArrays(self.primative, 0, self.mesh.vertices.shape[0])
@@ -126,3 +132,24 @@ class ModelFromMesh(BaseModel):
 
         if shader is not None:
             self.bind_shader(shader)
+
+class CompModel(BaseModel):
+
+    def __init__(self, scene, models=[],visable=True):
+        self.components = models
+        self.visable = visable
+        self.scene = scene
+        self.M = TransformMatrix()
+
+    def draw(self, M=TransformMatrix()):
+        if self.visable:
+            for component in self.components:
+                transform = TransformMatrix()
+                if M==TransformMatrix():
+                    transform.matrix =self.M.get_transform()
+                else:
+                    transform.matrix = np.matmul(np.array(M.get_transform()), np.array(self.M.get_transform()))
+
+                component.draw(
+                    M=transform
+                )

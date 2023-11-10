@@ -3,7 +3,7 @@ import imgui
 import glm
 
 from scene import Scene
-from model import ModelFromMesh
+from model import ModelFromMesh, CompModel
 from mesh import CubeMesh, SquareMesh, SphereMesh
 from shaders import PhongShader
 from light import LightSource
@@ -21,16 +21,22 @@ class Sandbox(Scene):
         self.lights.append(LightSource(self))
         self.lights.append(LightSource(self))
 
+        xwing = []
+        for mesh in model_loader.load_model('xwing/xwing.obj'):
+            xwing.append(ModelFromMesh(self, mesh, shader=PhongShader()))
+
+        self.models.append(CompModel(self, xwing))
 
         self.models.append(ModelFromMesh(self, model_loader.load_model('bunny/bunny.obj')[0], shader=PhongShader()))
         self.models[-1].M.translate([-5,0,0])
 
-        self.skybox = SkyBox(self, 'skybox/sb_frozendusk', extension='jpg')
+        # self.skybox = SkyBox(self, 'skybox/sb_frozendusk', extension='jpg')
+        self.skybox = SkyBox(self, 'skybox/ame_ash', extension='bmp')
 
-        self.env_map = EnvironmentMap()
+        # self.env_map = EnvironmentMap()
 
-        self.sphere = ModelFromMesh(self, SphereMesh(), shader=EnvironmentShader(map=self.env_map))
-        self.sphere.M.scale([2,2,2])
+        # self.sphere = ModelFromMesh(self, SphereMesh(), shader=EnvironmentShader(map=self.env_map))
+        # self.sphere.M.scale([2,2,2])
 
         self.trans = [0, 0, 0]
         self.rot_axis = [0, 0, 0]
@@ -46,8 +52,8 @@ class Sandbox(Scene):
 
         if not framebuffer:
 
-            self.env_map.update(self)
-            self.sphere.draw()
+            # self.env_map.update(self)
+            # self.sphere.draw()
 
             for index, light in enumerate(self.lights):
                 self.imgui_light_settings(light, index)
@@ -100,14 +106,15 @@ class Sandbox(Scene):
             self.scale = [1, 1, 1]
 
 
-        imgui.text("material")
-        imgui.separator()    
+        if hasattr(model, 'mesh'):
+            imgui.text("material")
+            imgui.separator()    
 
-        changed, self.models[index].mesh.material.Ka = imgui.color_edit3("Ka", *self.models[index].mesh.material.Ka)
-        changed, model.mesh.material.Kd = imgui.color_edit3("Kd", *model.mesh.material.Kd)
-        changed, model.mesh.material.Ks = imgui.color_edit3("Ks", *model.mesh.material.Ks)
-        changed, model.mesh.material.Ns = imgui.slider_float("Ns", model.mesh.material.Ns, 0, 100)
-        changed, model.mesh.material.alpha = imgui.slider_float("alpha", model.mesh.material.alpha, 0, 1)
+            changed, model.mesh.material.Ka = imgui.color_edit3("Ka", *model.mesh.material.Ka)
+            changed, model.mesh.material.Kd = imgui.color_edit3("Kd", *model.mesh.material.Kd)
+            changed, model.mesh.material.Ks = imgui.color_edit3("Ks", *model.mesh.material.Ks)
+            changed, model.mesh.material.Ns = imgui.slider_float("Ns", model.mesh.material.Ns, 0, 100)
+            changed, model.mesh.material.alpha = imgui.slider_float("alpha", model.mesh.material.alpha, 0, 1)
 
         imgui.pop_id()
         imgui.end()
