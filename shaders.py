@@ -1,6 +1,7 @@
 import OpenGL.GL as gl
 import OpenGL.GL.shaders as shaders
 import numpy as np
+from matutils import homog, unhomog
 
 class Uniform:
     '''
@@ -24,8 +25,8 @@ class Uniform:
         '''
         self.location = gl.glGetUniformLocation(program=program, name=self.name)
 
-        if self.location == -1:
-            print('(E) Warning, no uniform {}'.format(self.name))
+        # if self.location == -1:
+        #     print('(E) Warning, no uniform {}'.format(self.name))
 
     def bind_matrix(self, M=None, number=1, transpose=True):
         '''
@@ -144,6 +145,8 @@ class BaseShaderProgram:
             'PVM': Uniform('PVM'),  # project view model matrix
         }
 
+        self.compiled = False
+
 
     def add_uniform(self, name):
         self.uniforms[name] = Uniform(name)
@@ -153,6 +156,10 @@ class BaseShaderProgram:
         Call this function to compile the GLSL codes for both shaders.
         :return:
         '''
+        if self.compiled:
+            # print('(W) Warning: Trying to compile already compiled shader program {}'.format(self.name))
+            return
+
         print('Compiling GLSL shaders [{}]...'.format(self.name))
         try:
             self.program = gl.glCreateProgram()
@@ -174,6 +181,8 @@ class BaseShaderProgram:
         # link all uniforms
         for uniform in self.uniforms:
             self.uniforms[uniform].link(self.program)
+
+        self.compiled = True
 
     def bindAttributes(self, attributes):
         # bind all shader attributes to the correct locations in the VAO
@@ -198,15 +207,6 @@ class BaseShaderProgram:
         self.bind_textures(model)
 
     def bind_textures(self, model):
-        if 'has_texture' not in self.uniforms.keys():
-            self.add_uniform('has_texture')
-            self.uniforms['has_texture'].link(self.program)
-
-        if len(model.mesh.textures) > 0:
-            self.uniforms['has_texture'].bind(1)
-        else:
-            self.uniforms['has_texture'].bind(0)
-
         for unit, texture in enumerate(model.mesh.textures):
             texture.bind(unit)
 
@@ -216,26 +216,32 @@ class BaseShaderProgram:
 
             self.uniforms[texture.uniform].bind(unit)
 
-        texture_size = len(model.mesh.textures)
+        texture_unit = len(model.mesh.textures)
 
-        if 'material.has_texture' not in self.uniforms.keys():
-            self.add_uniform('material.has_texture')
-            self.uniforms['material.has_texture'].link(self.program)
+        texture_unit = self.bind_material_texture(model.mesh.material.map_Kd, 'material.map_Kd', 'material.use_map_Kd', texture_unit)
+        texture_unit = self.bind_material_texture(model.mesh.material.map_Ks, 'material.map_Ks', 'material.use_map_Ks', texture_unit)
+        texture_unit = self.bind_material_texture(model.mesh.material.map_bump, 'material.map_bump', 'material.use_map_bump', texture_unit)
 
-        if model.mesh.material.texture is not None:
-            if 'material.textureObject' not in self.uniforms.keys():
-                self.add_uniform('material.textureObject')
-                self.uniforms['material.textureObject'].link(self.program)
+        return texture_unit
 
-            unit = texture_size
-            texture_size += 1
-            model.mesh.material.texture.bind(unit)
-            self.uniforms['material.textureObject'].bind(unit)
-            self.uniforms['material.has_texture'].bind(1)
+    def bind_material_texture(self, texture, texture_name, has_texture_name, texture_unit):
+        if has_texture_name not in self.uniforms.keys():
+            self.add_uniform(has_texture_name)
+            self.uniforms[has_texture_name].link(self.program)
+
+        if texture is not None:
+            if texture_name not in self.uniforms.keys():
+                self.add_uniform(texture_name)
+                self.uniforms[texture_name].link(self.program)
+
+            texture.bind(texture_unit)
+            self.uniforms[texture_name].bind(texture_unit)
+            self.uniforms[has_texture_name].bind(1)
+            return texture_unit + 1
         else:
-            self.uniforms['material.has_texture'].bind(0)
+            self.uniforms[has_texture_name].bind(0)
 
-        return texture_size
+        return texture_unit
 
 class PhongShader(BaseShaderProgram):
     '''
@@ -251,7 +257,7 @@ class PhongShader(BaseShaderProgram):
         BaseShaderProgram.__init__(self, name=name)
 
         self.uniforms = {}
-        self.max_lights = 16
+        self.max_lights = 6
 
         # MVP
         self.add_uniform('PVM')
@@ -264,8 +270,6 @@ class PhongShader(BaseShaderProgram):
         self.add_uniform('material.Kd')
         self.add_uniform('material.Ks')
         self.add_uniform('material.Ns')
-        self.add_uniform('material.has_texture')
-        self.add_uniform('material.textureObject')
 
         # light
         self.add_uniform('light_count')
@@ -306,11 +310,6 @@ class PhongShader(BaseShaderProgram):
         self.bind_light_uniforms(model.scene.lights, V)
 
     def bind_light_uniforms(self, lights, V):
-        def homog(v):
-            return np.hstack([v,1])
-
-        def unhomog(vh):
-            return vh[:-1]/vh[-1]
 
         if len(lights) > self.max_lights:
             print(f'(E) Warning: Max light count of {self.max_lights} exceeded')
@@ -357,3 +356,22 @@ class TextureShader(PhongShader):
     def __init__(self):
         PhongShader.__init__(self, name='texture')
 
+class PhongShaderNormalMap(PhongShader):
+    def __init__(self):
+        PhongShader.__init__(self, name='phong_normal_map')
+
+class PhongShaderInstanced(PhongShader):
+    def __init__(self):
+        PhongShader.__init__(self, name='phong_instanced')
+        self.offsets = []
+
+    def add_offset(self, offset):
+        self.add_uniform(f'offsets[{len(self.offsets)}]')
+        self.uniforms[f'offsets[{len(self.offsets)}]'].link(self.program)
+        self.offsets.append(offset)
+        
+    def bind(self, model, M):
+        PhongShader.bind(self, model, M)
+
+        for index, offset in enumerate(self.offsets):
+            self.uniforms[f'offsets[{index}]'].bind_vector(offset)

@@ -5,6 +5,7 @@ from vbo import VertexBuffer, BufferLayout, BufferElement, BufferType
 from ibo import IndexBuffer
 from texture import Texture
 from shaders import PhongShader
+from model_loader import ModelLoader
 import numpy as np
 
 class BaseModel():
@@ -56,15 +57,45 @@ class BaseModel():
         self.init_vbo('tangent', self.mesh.tangents)
         self.init_vbo('binormal', self.mesh.binormals)
 
-        if self.mesh.material.texture is not None:
-            if isinstance(self.mesh.material.texture, str):
-                self.mesh.material.texture = Texture(self.mesh.material.texture)
+        if self.mesh.material.map_Kd is not None:
+            if isinstance(self.mesh.material.map_Kd, str):
+                self.mesh.material.map_Kd = Texture(self.mesh.material.map_Kd)
+        
+        if self.mesh.material.map_Ks is not None:
+            if isinstance(self.mesh.material.map_Ks, str):
+                self.mesh.material.map_Ks = Texture(self.mesh.material.map_Ks)
+
+        if self.mesh.material.map_bump is not None:
+            if isinstance(self.mesh.material.map_bump, str):
+                self.mesh.material.map_bump = Texture(self.mesh.material.map_bump)
+
+        if self.mesh.textures is not None:
+            for texture in self.mesh.textures:
+                if isinstance(texture, str):
+                    texture = Texture(texture)
 
         if self.mesh.faces is not None:
             self.ibo = IndexBuffer(self.mesh.faces)
             self.vao.set_index_buffer(self.ibo)
 
         self.vao.unbind()
+
+    def update(self):
+        self.vao.bind()
+
+        self.update_vbo('position', self.mesh.vertices)
+        self.update_vbo('normal', self.mesh.normals)
+        self.update_vbo('color', self.mesh.colors)
+        self.update_vbo('texCoord', self.mesh.textureCoords)
+        self.update_vbo('tangent', self.mesh.tangents)
+        self.update_vbo('binormal', self.mesh.binormals)
+
+
+    def update_vbo(self, name, data):
+        if name in self.vbos:
+            self.vbos[name].update(data)
+        else:
+            self.init_vbo(name, data)
 
     def init_vbo(self, name, data):
 
@@ -113,6 +144,32 @@ class BaseModel():
 
             self.vao.unbind()
 
+class InstancedModel(BaseModel):
+
+    def __init__(self, scene, num_instances, mesh=None, primative=gl.GL_TRIANGLES, visable=True):
+        self.num_instances = num_instances
+        BaseModel.__init__(self, scene=scene, mesh=mesh, primative=primative, visable=visable)
+
+    def draw(self, M=TransformMatrix()):
+        if self.visable:
+            self.vao.bind()
+            if M == TransformMatrix():
+                self.shader.bind(
+                    model=self,
+                    M=np.array(self.M.get_transform())
+                )
+            else:
+                self.shader.bind(
+                    model=self,
+                    M=np.matmul(np.array(M.get_transform()), np.array(self.M.get_transform()))
+                )
+
+            if self.ibo is None:
+                gl.glDrawArraysInstanced(self.primative, 0, self.mesh.vertices.shape[0], self.num_instances)
+            else:
+                gl.glDrawElementsInstanced(self.primative, self.mesh.faces.flatten().shape[0], gl.GL_UNSIGNED_INT, None, self.num_instances)
+
+            self.vao.unbind()
 
 class ModelFromMesh(BaseModel):
 
@@ -122,16 +179,42 @@ class ModelFromMesh(BaseModel):
         if name is not None:
             self.name = name
 
-        if self.mesh.faces.shape[1] == 3:
-            self.primative = gl.GL_TRIANGLES
+        if self.mesh.faces is not None:
+            if self.mesh.faces.shape[1] == 3:
+                self.primative = gl.GL_TRIANGLES
 
-        elif self.mesh.faces.shape[1] == 4:
-            self.primative = gl.GL_QUADS
+            elif self.mesh.faces.shape[1] == 4:
+                self.primative = gl.GL_QUADS
+        else:
+            self.primative = gl.GL_TRIANGLES
 
         self.bind()
 
         if shader is not None:
             self.bind_shader(shader)
+
+class ModelFromMeshInstanced(InstancedModel):
+
+    def __init__(self, scene, mesh, name=None, shader=None, visable=True, num_instances=100):
+        InstancedModel.__init__(self, scene=scene, mesh=mesh, visable=visable, num_instances=num_instances)
+
+        if name is not None:
+            self.name = name
+
+        if self.mesh.faces is not None:
+            if self.mesh.faces.shape[1] == 3:
+                self.primative = gl.GL_TRIANGLES
+
+            elif self.mesh.faces.shape[1] == 4:
+                self.primative = gl.GL_QUADS
+        else:
+            self.primative = gl.GL_TRIANGLES
+
+        self.bind()
+
+        if shader is not None:
+            self.bind_shader(shader)
+
 
 class CompModel(BaseModel):
 
@@ -153,3 +236,33 @@ class CompModel(BaseModel):
                 component.draw(
                     M=transform
                 )
+
+    def update(self):
+        for component in self.components:
+            component.update()
+
+
+class ModelFromObj(CompModel):
+
+    def __init__(self, scene, obj, shader=None, visable=True, generate_normals=True, flip_uvs=True, flip_winding=False, optimize_meshes=True):
+        model_loader = ModelLoader()
+        meshes = model_loader.load_model(obj, generate_normals=generate_normals, flip_uvs=flip_uvs, flip_winding=flip_winding, optimize_meshes=optimize_meshes)
+
+        models = []
+        for mesh in meshes:
+            models.append(ModelFromMesh(scene, mesh, visable=visable, shader=shader))
+
+        CompModel.__init__(self, scene, models, visable=visable)
+
+
+class ModelFromObjInstanced(CompModel):
+
+    def __init__(self, scene, obj, shader=None, visable=True, generate_normals=True, flip_uvs=True, flip_winding=False, optimize_meshes=True, num_instances=100):
+        model_loader = ModelLoader()
+        meshes = model_loader.load_model(obj, generate_normals=generate_normals, flip_uvs=flip_uvs, flip_winding=flip_winding, optimize_meshes=optimize_meshes)
+
+        models = []
+        for mesh in meshes:
+            models.append(ModelFromMeshInstanced(scene, mesh, visable=visable, shader=shader, num_instances=num_instances))
+
+        CompModel.__init__(self, scene, models, visable=visable)

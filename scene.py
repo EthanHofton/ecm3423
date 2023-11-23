@@ -4,6 +4,7 @@ import glm
 from imgui.integrations.glfw import GlfwRenderer
 import imgui
 from camera3d import Camera3d
+import cProfile
 
 class Scene():
 
@@ -11,12 +12,13 @@ class Scene():
         imgui.shutdown()
         glfw.terminate()
 
-    def __init__(self, width=800, height=600, title="untitled"):
+    def __init__(self, width=800, height=600, title="untitled", FPS=60):
         self.window_size = (width, height)
         self.width = width
         self.height = height
         self.wireframe = False
         self.title = title
+        self.FPS = FPS
 
         # initialize glfw and create window
         imgui.create_context()
@@ -53,6 +55,8 @@ class Scene():
 
         # enable back face culling (see lecture on clipping and visibility
         # gl.glEnable(gl.GL_CULL_FACE)
+        # gl.glCullFace(gl.GL_BACK)
+        # gl.glFrontFace(gl.GL_CCW)
         # depending on your model, or your projection matrix, the winding order may be inverted,
         # Typically, you see the far side of the model instead of the front one
         # uncommenting the following line should provide an easy fix.
@@ -71,6 +75,7 @@ class Scene():
         self.models = []
         self.lights = []
         self.camera = Camera3d(width/height)
+        self.delta_time = 0.
 
     def key_callback(self, window, key, scancode, action, mods):
         # give imgui callbacks a chance to process the event
@@ -110,17 +115,34 @@ class Scene():
             model.draw()
 
     def run(self):
+        # lock to self.FPS        
+        glfw.set_time(0)
+
+        time = glfw.get_time()
         while not glfw.window_should_close(self._window):
+            while glfw.get_time() < time + 1/self.FPS:
+                pass
+
+
+            # calculate the time since last frame
+            new_time = glfw.get_time()
+            self.delta_time = new_time - time
+            time = new_time
+
+            # set the title
+            glfw.set_window_title(self._window, f'{self.title} - FPS: {1/self.delta_time:.2f}')
+
             # poll events
             glfw.poll_events()
             self.impl.process_inputs()
             if self.camera is not None:
-                self.camera.key_input(self._window)
+                self.camera.key_input(self._window, self.delta_time)
             # start the imgui frame
             imgui.new_frame()
 
             # call the draw function
             self.draw()
+            # cProfile.runctx('self.draw()', globals(), locals())
 
             # render imgui data
             imgui.render()

@@ -1,6 +1,7 @@
 import OpenGL.GL as gl
 import imgui
 import glm
+import cProfile
 
 from scene import Scene
 from model import ModelFromMesh, CompModel
@@ -21,21 +22,27 @@ class Sandbox(Scene):
         self.lights.append(LightSource(self))
         self.lights.append(LightSource(self))
 
-        xwing = []
-        for mesh in model_loader.load_model('xwing/xwing.obj'):
-            xwing.append(ModelFromMesh(self, mesh, shader=PhongShader()))
+        scene = []
+        for mesh in model_loader.load_model('test_scene/scene.obj'):
+            scene.append(ModelFromMesh(self, mesh, shader=PhongShader()))
 
-        self.models.append(CompModel(self, xwing))
+        # quad_table = []
+        # for mesh in model_loader.load_model('test_scene/quad_table.obj'):
+        #     quad_table.append(ModelFromMesh(self, mesh, shader=PhongShader()))
 
-        self.models.append(ModelFromMesh(self, model_loader.load_model('bunny/bunny.obj')[0], shader=PhongShader()))
-        self.models[-1].M.translate([-5,0,0])
+        # self.quad_table = CompModel(self, quad_table)
+        self.models.append(CompModel(self, scene))
+
+        # self.models.append(ModelFromMesh(self, model_loader.load_model('bunny/bunny.obj')[0], shader=PhongShader()))
+        # self.models[-1].M.translate([-5,0,0])
 
         # self.skybox = SkyBox(self, 'skybox/sb_frozendusk', extension='jpg')
         self.skybox = SkyBox(self, 'skybox/ame_ash', extension='bmp')
 
-        # self.env_map = EnvironmentMap()
+        # self.env_map = EnvironmentMap(width=100, height=100)
 
-        # self.sphere = ModelFromMesh(self, SphereMesh(), shader=EnvironmentShader(map=self.env_map))
+        # self.sphere = ModelFromMesh(self, SphereMesh(nvert=12, nhoriz=24), shader=EnvironmentShader(map=self.env_map))
+        # self.sphere = ModelFromMesh(self, SphereMesh(nvert=12, nhoriz=24), shader=EnvironmentShader(map=self.env_map))
         # self.sphere.M.scale([2,2,2])
 
         self.trans = [0, 0, 0]
@@ -48,11 +55,15 @@ class Sandbox(Scene):
             # clear the screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
-        self.draw_reflections()
+        self.skybox.draw()
+
+        for model in self.models:
+            model.draw()
 
         if not framebuffer:
 
-            # self.env_map.update(self)
+            # update the environment map with regrards to the sphere
+            # self.env_map.update(self, self.sphere)
             # self.sphere.draw()
 
             for index, light in enumerate(self.lights):
@@ -61,13 +72,13 @@ class Sandbox(Scene):
             for index, model in enumerate(self.models):
                 self.imgui_model_settings(model, index)
 
+            # self.imgui_model_settings(self.sphere, 'sphere')
+
             imgui.show_metrics_window()
 
     def draw_reflections(self):
         self.skybox.draw()
-
-        for model in self.models:
-            model.draw()
+        self.quad_table.draw()
         
     def imgui_light_settings(self, light, index):
         imgui.begin(f"Light Source {index}")

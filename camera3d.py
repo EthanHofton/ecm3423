@@ -31,6 +31,9 @@ class Camera3d:
         self._mouse_last_x = 0.0
         self._mouse_last_y = 0.0
 
+        self.move_speed = 100
+        self.scroll_speed = 100
+
         self._update_vectors()
 
     def _update_vectors(self):
@@ -88,34 +91,34 @@ class Camera3d:
         self._mouse_last_x = x
         self._mouse_last_y = y
 
-    def key_input(self, window):
+    def key_input(self, window, dt):
         if not self._active:
             return
 
         if glfw.get_key(window, glfw.KEY_W) == glfw.PRESS:
-            self.translate(glm.vec3(0.0, 0.0, 1.0))
+            self.translate(glm.vec3(0.0, 0.0, 1.0 * self.move_speed * dt))
         
         if glfw.get_key(window, glfw.KEY_S) == glfw.PRESS:
-            self.translate(glm.vec3(0.0, 0.0, -1.0))
+            self.translate(glm.vec3(0.0, 0.0, -1.0 * self.move_speed * dt))
 
         if glfw.get_key(window, glfw.KEY_A) == glfw.PRESS:
-            self.translate(glm.vec3(-1.0, 0.0, 0.0))
+            self.translate(glm.vec3(-1.0 * self.move_speed * dt, 0.0, 0.0))
 
         if glfw.get_key(window, glfw.KEY_D) == glfw.PRESS:
-            self.translate(glm.vec3(1.0, 0.0, 0.0))
+            self.translate(glm.vec3(1.0 * self.move_speed * dt, 0.0, 0.0))
 
         if glfw.get_key(window, glfw.KEY_SPACE) == glfw.PRESS:
-            self.translate(glm.vec3(0.0, 1.0, 0.0))
+            self.translate(glm.vec3(0.0, 1.0 * self.move_speed * dt, 0.0))
 
         if glfw.get_key(window, glfw.KEY_LEFT_SHIFT) == glfw.PRESS:
-            self.translate(glm.vec3(0.0, -1.0, 0.0))
+            self.translate(glm.vec3(0.0, -1.0 * self.move_speed * dt, 0.0))
 
         if glfw.get_key(window, glfw.KEY_MINUS) == glfw.PRESS:
-            self._fov -= 1.0
+            self._fov -= 1. * self.scroll_speed * dt
             self._projection = glm.perspective(glm.radians(self._fov), self._aspect_ratio, self._z_near, self._z_far)
 
         if glfw.get_key(window, glfw.KEY_EQUAL) == glfw.PRESS:
-            self._fov += 1.0
+            self._fov += 1. * self.scroll_speed * dt
             self._projection = glm.perspective(glm.radians(self._fov), self._aspect_ratio, self._z_near, self._z_far)
 
 

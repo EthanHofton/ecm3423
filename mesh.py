@@ -2,6 +2,8 @@ from material import Material
 import numpy as np
 
 from texture import Texture
+from matutils import sort_faces_by_winding_order
+import numpy as np
 
 
 class Mesh:
@@ -85,7 +87,7 @@ class Mesh:
 
 class SquareMesh(Mesh):
 
-    def __init__(self, texture=None):
+    def __init__(self, texture=None, inside=True, material=None):
         vertices = np.array([
             [-1.0, -1.0, 0.0],  # 0
             [+1.0, -1.0, 0.0],  # 1
@@ -99,70 +101,69 @@ class SquareMesh(Mesh):
         ], dtype=np.uint32)
 
         textureCoords = np.array([
-            [0.0, 0.0],  # 0
-            [1.0, 0.0],  # 1
-            [0.0, 1.0],  # 2
-            [1.0, 1.0],  # 3
+            [0.0, 0.0],
+            [1.0, 0.0],
+            [0.0, 1.0],
+            [1.0, 1.0]
         ], dtype='f')
 
-        Mesh.__init__(self, vertices=vertices, faces=faces, textureCoords=textureCoords)
+        if not inside:
+            # Reverse the winding order for backface culling
+            faces = faces[:, np.argsort([0, 2, 1])]
+
+        Mesh.__init__(self, vertices=vertices, faces=faces, textureCoords=textureCoords, material=material)
 
         if texture is not None:
             self.textures.append(texture)
 
 class CubeMesh(Mesh):
-    def __init__(self, texture=None, inside=False):
-
+    def __init__(self, texture=None, inside=False, material=None):
+        
+        # vertices, normals, texture coords
         vertices = np.array([
-
-            [-1.0, -1.0, -1.0],  # 0
-            [+1.0, -1.0, -1.0],  # 1
-
-            [-1.0, +1.0, -1.0],  # 2
-            [+1.0, +1.0, -1.0],  # 3
-
-            [-1.0, -1.0, +1.0],  # 4
-            [-1.0, +1.0, +1.0],  # 5
-
-            [+1.0, -1.0, +1.0],  # 6
-            [+1.0, +1.0, +1.0]  # 7
-
+            [-1.0, -1.0, -1.0,  0.0,  0.0, -1.0, 0.0, 0.0,],
+            [ 1.0,  1.0, -1.0,  0.0,  0.0, -1.0, 1.0, 1.0,],
+            [ 1.0, -1.0, -1.0,  0.0,  0.0, -1.0, 1.0, 0.0,],
+            [ 1.0,  1.0, -1.0,  0.0,  0.0, -1.0, 1.0, 1.0,],
+            [-1.0, -1.0, -1.0,  0.0,  0.0, -1.0, 0.0, 0.0,],
+            [-1.0,  1.0, -1.0,  0.0,  0.0, -1.0, 0.0, 1.0,],
+            [-1.0, -1.0,  1.0,  0.0,  0.0,  1.0, 0.0, 0.0,],
+            [ 1.0, -1.0,  1.0,  0.0,  0.0,  1.0, 1.0, 0.0,],
+            [ 1.0,  1.0,  1.0,  0.0,  0.0,  1.0, 1.0, 1.0,],
+            [ 1.0,  1.0,  1.0,  0.0,  0.0,  1.0, 1.0, 1.0,],
+            [-1.0,  1.0,  1.0,  0.0,  0.0,  1.0, 0.0, 1.0,],
+            [-1.0, -1.0,  1.0,  0.0,  0.0,  1.0, 0.0, 0.0,],
+            [-1.0,  1.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0,],
+            [-1.0,  1.0, -1.0, -1.0,  0.0,  0.0, 1.0, 1.0,],
+            [-1.0, -1.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0,],
+            [-1.0, -1.0, -1.0, -1.0,  0.0,  0.0, 0.0, 1.0,],
+            [-1.0, -1.0,  1.0, -1.0,  0.0,  0.0, 0.0, 0.0,],
+            [-1.0,  1.0,  1.0, -1.0,  0.0,  0.0, 1.0, 0.0,],
+            [ 1.0,  1.0,  1.0,  1.0,  0.0,  0.0, 1.0, 0.0,],
+            [ 1.0, -1.0, -1.0,  1.0,  0.0,  0.0, 0.0, 1.0,],
+            [ 1.0,  1.0, -1.0,  1.0,  0.0,  0.0, 1.0, 1.0,],
+            [ 1.0, -1.0, -1.0,  1.0,  0.0,  0.0, 0.0, 1.0,],
+            [ 1.0,  1.0,  1.0,  1.0,  0.0,  0.0, 1.0, 0.0,],
+            [ 1.0, -1.0,  1.0,  1.0,  0.0,  0.0, 0.0, 0.0,],
+            [-1.0, -1.0, -1.0,  0.0, -1.0,  0.0, 0.0, 1.0,],
+            [ 1.0, -1.0, -1.0,  0.0, -1.0,  0.0, 1.0, 1.0,],
+            [ 1.0, -1.0,  1.0,  0.0, -1.0,  0.0, 1.0, 0.0,],
+            [ 1.0, -1.0,  1.0,  0.0, -1.0,  0.0, 1.0, 0.0,],
+            [-1.0, -1.0,  1.0,  0.0, -1.0,  0.0, 0.0, 0.0,],
+            [-1.0, -1.0, -1.0,  0.0, -1.0,  0.0, 0.0, 1.0,],
+            [-1.0,  1.0, -1.0,  0.0,  1.0,  0.0, 0.0, 1.0,],
+            [ 1.0,  1.0 , 1.0,  0.0,  1.0,  0.0, 1.0, 0.0,],
+            [ 1.0,  1.0, -1.0,  0.0,  1.0,  0.0, 1.0, 1.0,],
+            [ 1.0,  1.0,  1.0,  0.0,  1.0,  0.0, 1.0, 0.0,],
+            [-1.0,  1.0, -1.0,  0.0,  1.0,  0.0, 0.0, 1.0,],
+            [-1.0,  1.0,  1.0,  0.0,  1.0,  0.0, 0.0, 0.0 ],
         ], dtype='f')
 
-        faces = np.array([
+        pos = vertices[:, :3].reshape((36, 3))
+        normals = vertices[:, 3:6].reshape((36, 3))
+        textureCoords = vertices[:, 6:].reshape((36, 2))
 
-            # back
-            [1, 0, 2],
-            [1, 2, 3],
-
-            # right
-            [2, 0, 4],
-            [2, 4, 5],
-
-            # left
-            [1, 3, 7],
-            [1, 7, 6],
-
-            # front
-            [5, 4, 6],
-            [5, 6, 7],
-
-            # bottom
-            [0, 1, 4],
-            [4, 1, 6],
-
-            # top
-            [2, 5, 3],
-            [5, 7, 3],
-
-        ], dtype=np.uint32)
-
-        if inside:
-            faces = faces[:, np.argsort([0, 2, 1])]
-
-        textureCoords = None # np.array([], dtype='f')
-
-        Mesh.__init__(self, vertices=vertices, faces=faces, textureCoords=textureCoords)
+        Mesh.__init__(self, vertices=pos, textureCoords=textureCoords, normals=normals, material=material)
 
         if texture is not None:
             self.textures = [

@@ -43,7 +43,7 @@ class IndexBuffer:
         self._count = len(data)
 
         self.bind()
-        gl.glBufferSubData(gl.GL_ELEMENT_ARRAY_BUFFER, 0, len(data) * 4, data.flatten())
+        gl.glBufferSubData(gl.GL_ELEMENT_ARRAY_BUFFER, 0, data.nbytes, data.flatten())
         self.unbind()
 
     def get_count(self):

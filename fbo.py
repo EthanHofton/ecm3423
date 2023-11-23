@@ -56,6 +56,14 @@ class Framebuffer():
 
         self.unbind()
 
+    def no_colorbuffer(self):
+        self.bind()
+
+        gl.glDrawBuffer(gl.GL_NONE)
+        gl.glReadBuffer(gl.GL_NONE)
+
+        self.unbind()
+
 
 class FramebufferTexture(Texture):
 
