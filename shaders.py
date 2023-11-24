@@ -59,7 +59,7 @@ class Uniform:
             elif self.value.ndim==2:
                 self.bind_matrix()
         else:
-            print('Wrong value bound: {}'.format(type(self.value)))
+            print('Wrong value bound: {} for {}'.format(type(self.value), self.name))
 
     def bind_int(self, value=None):
         if value is not None:
@@ -381,6 +381,9 @@ class PhongShaderNormalMap(PhongShader):
 class PhongShaderInstanced(PhongShader):
     def __init__(self):
         PhongShader.__init__(self, name='phong_instanced')
+        self.add_uniform("M")
+        self.add_uniform("PV")
+        self.add_uniform("V")
         self.offsets = []
 
     def add_offset(self, offset):
@@ -390,6 +393,10 @@ class PhongShaderInstanced(PhongShader):
         
     def bind(self, model, M):
         PhongShader.bind(self, model, M)
+
+        self.uniforms["M"].bind(M)
+        self.uniforms["V"].bind(np.array(model.scene.camera.view(), 'f'))
+        self.uniforms["PV"].bind(np.matmul(model.scene.camera.projection(), model.scene.camera.view()))
 
         for index, offset in enumerate(self.offsets):
             self.uniforms[f'offsets[{index}]'].bind_vector(offset)

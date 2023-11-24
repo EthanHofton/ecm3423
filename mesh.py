@@ -27,13 +27,16 @@ class Mesh:
         self.textureCoords = textureCoords
         self.textures = []
         self.tangents = None
-        self.binormals = None
+        self.bitangents = None
 
         if vertices is not None:
             print('Creating mesh')
-            print('- {} vertices'.format(self.vertices.shape[0]))
+            print('- {} vertices, ({})'.format(self.vertices.shape[0], self.vertices.shape))
             if faces is not None:
-                print('- {} faces'.format(self.faces.shape[0]))
+                print('- {} faces, ({})'.format(self.faces.shape[0], self.faces.shape))
+            if textureCoords is not None: 
+                print('- {} texture coordinates, ({})'.format(self.textureCoords.shape[0], self.textureCoords.shape))
+        
 
         if normals is None:
             if faces is None:
@@ -46,44 +49,50 @@ class Mesh:
     def calculate_normals(self):
         '''
         method to calculate normals from the mesh faces.
-        TODO WS3: Fix this code to calculate the correct normals
-        Use the approach discussed in class:
-        1. calculate normal for each face using cross product
-        2. set each vertex normal as the average of the normals over all faces it belongs to.
         '''
 
-        self.normals = np.zeros((self.vertices.shape[0], 3), dtype='f')
-        if self.textureCoords is not None:
-            self.tangents = np.zeros((self.vertices.shape[0], 3), dtype='f')
-            self.binormals = np.zeros((self.vertices.shape[0], 3), dtype='f')
+        # Calculate triangle edges and deltas for vertices and texture coordinates
+        delta_pos1 = self.vertices[self.faces[:, 1]] - self.vertices[self.faces[:, 0]]
+        delta_pos2 = self.vertices[self.faces[:, 2]] - self.vertices[self.faces[:, 0]]
+        delta_uv1 = self.textureCoords[self.faces[:, 1]] - self.textureCoords[self.faces[:, 0]]
+        delta_uv2 = self.textureCoords[self.faces[:, 2]] - self.textureCoords[self.faces[:, 0]]
 
-        #TODO WS3
-        for f in range(self.faces.shape[0]):
-            # first calculate the face normal using the cross product of the triangle's sides
-            a = self.vertices[self.faces[f, 1]] - self.vertices[self.faces[f, 0]]
-            b = self.vertices[self.faces[f, 2]] - self.vertices[self.faces[f, 0]]
-            face_normal = np.cross(a, b)
+        # Calculate tangent and bitangent vectors
+        self.face_tangents = np.zeros((len(self.faces), 3))
+        self.face_bitangents = np.zeros((len(self.faces), 3))
 
-            # tangent
-            if self.textureCoords is not None:
-                txa = self.textureCoords[self.faces[f, 1], :] - self.textureCoords[self.faces[f, 0], :]
-                txb = self.textureCoords[self.faces[f, 2], :] - self.textureCoords[self.faces[f, 2], :]
-                face_tangent = txb[0]*a - txa[0]*b
-                face_binormal = -txb[1]*a + txa[1]*b
+        r = 1.0 / (delta_uv1[:, 0] * delta_uv2[:, 1] - delta_uv1[:, 1] * delta_uv2[:, 0])
 
-            # blend normal on all 3 vertices
+        self.face_tangents[:, 0] = (delta_pos1[:, 0] * delta_uv2[:, 1] - delta_pos2[:, 0] * delta_uv1[:, 1]) * r
+        self.face_tangents[:, 1] = (delta_pos1[:, 1] * delta_uv2[:, 1] - delta_pos2[:, 1] * delta_uv1[:, 1]) * r
+        self.face_tangents[:, 2] = (delta_pos1[:, 2] * delta_uv2[:, 1] - delta_pos2[:, 2] * delta_uv1[:, 1]) * r
+
+        self.face_bitangents[:, 0] = (delta_pos2[:, 0] * delta_uv1[:, 0] + delta_pos1[:, 0] * -delta_uv2[:, 0]) * r
+        self.face_bitangents[:, 1] = (delta_pos2[:, 1] * delta_uv1[:, 0] + delta_pos1[:, 1] * -delta_uv2[:, 0]) * r
+        self.face_bitangents[:, 2] = (delta_pos2[:, 2] * delta_uv1[:, 0] + delta_pos1[:, 2] * -delta_uv2[:, 0]) * r
+
+        # Calculate normals for each face
+        self.face_normals = np.cross(delta_pos1, delta_pos2)
+
+        # Calculate normals for each vertex
+        self.normals = np.zeros((len(self.vertices), 3))
+        self.tangents = np.zeros((len(self.vertices), 3))
+        self.bitangents = np.zeros((len(self.vertices), 3))
+
+        for i in range(len(self.faces)):
             for j in range(3):
-                self.normals[self.faces[f, j], :] += face_normal
-                if self.textureCoords is not None:
-                    self.tangents[self.faces[f, j], :] += face_tangent
-                    self.binormals[self.faces[f, j], :] += face_binormal
+                self.normals[self.faces[i, j]] += self.face_normals[i]
+                self.tangents[self.faces[i, j]] += self.face_tangents[i]
+                self.bitangents[self.faces[i, j]] += self.face_bitangents[i]
 
-        # finally we need to normalize the vectors
-        self.normals /= np.linalg.norm(self.normals, axis=1, keepdims=True)
-        if self.textureCoords is not None:
-            self.tangents /= np.linalg.norm(self.tangents, axis=1, keepdims=True)
-            self.binormals /= np.linalg.norm(self.binormals, axis=1, keepdims=True)
+        self.normals /= np.linalg.norm(self.normals, axis=1)[:, np.newaxis]
+        self.tangents /= np.linalg.norm(self.tangents, axis=1)[:, np.newaxis]
+        self.bitangents /= np.linalg.norm(self.bitangents, axis=1)[:, np.newaxis] 
 
+        # convert to float32
+        self.normals= self.normals.astype('f')
+        self.tangents = self.tangents.astype('f')
+        self.bitangents = self.bitangents.astype('f')
 
 class SquareMesh(Mesh):
 

@@ -55,7 +55,7 @@ class BaseModel():
         self.init_vbo('color', self.mesh.colors)
         self.init_vbo('texCoord', self.mesh.textureCoords)
         self.init_vbo('tangent', self.mesh.tangents)
-        self.init_vbo('binormal', self.mesh.binormals)
+        self.init_vbo('bitangent', self.mesh.bitangents)
 
         if self.mesh.material.map_Kd is not None:
             if isinstance(self.mesh.material.map_Kd, str):
@@ -92,7 +92,7 @@ class BaseModel():
         self.update_vbo('color', self.mesh.colors)
         self.update_vbo('texCoord', self.mesh.textureCoords)
         self.update_vbo('tangent', self.mesh.tangents)
-        self.update_vbo('binormal', self.mesh.binormals)
+        self.update_vbo('bitangent', self.mesh.bitangents)
 
 
     def update_vbo(self, name, data):

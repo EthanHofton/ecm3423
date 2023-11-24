@@ -74,15 +74,18 @@ vec3 directional_light(DirLight l, Mat m, vec3 normal, vec3 viewDir) {
 vec3 point_light(PointLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_view_space) {
     vec3 lightDir = normalize(l.position - position_view_space);
     float lambertian = max(dot(lightDir, normal), 0.0);
+    lambertian = clamp(lambertian, 0.0, 1.0);
+
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(reflectDir, viewDir), 0.0), m.Ns);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.Ns);
+    spec = clamp(spec, 0.0, 1.0);
 
     float dist = length(l.position - position_view_space);
     float attenuation =  min(1.0/(dist*dist*0.005) + 1.0/(dist*0.05), 1.0);
     
-    vec3 ambient = (l.Ia * m.Ka) * attenuation;
-    vec3 diffuse = (lambertian * l.Id * m.Kd) *attenuation;
-    vec3 specular = (spec * l.Is * m.Ks) * attenuation;
+    vec3 ambient =  (l.Ia * m.Ka)              * attenuation;
+    vec3 diffuse =  (l.Ia * m.Kd * lambertian) * attenuation;
+    vec3 specular = (l.Is * m.Ks * spec)       * attenuation;
 
     return ambient + diffuse + specular;
 }

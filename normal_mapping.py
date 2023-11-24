@@ -4,23 +4,23 @@ import numpy as np
 import glm
 
 from scene import Scene
-from model import ModelFromMesh, CompModel, ModelFromObjInstanced
+from model import ModelFromMesh, CompModel
 from mesh import CubeMesh, SquareMesh, SphereMesh
-from shaders import PhongShader, BaseShaderProgram, PhongShaderInstanced
-from light import LightSource
+from shaders import PhongShader
+from light import LightSource, DirectionalLight
 from model_loader import ModelLoader
 from fbo import Framebuffer, FramebufferTexture
 from skybox import SkyBox
 from environment_map import EnvironmentMap, EnvironmentShader
 from texture import Texture
 from material import Material
-from city_map import CityMap
-from light import DirectionalLight
 
-class City(Scene):
+class Sandbox(Scene):
 
     def __init__(self):
-        Scene.__init__(self, 1200, 800, "City")
+        Scene.__init__(self, 1200, 800, "Sandbox")
+
+        self.directional_light = DirectionalLight()
 
         self.setup_scene()
 
@@ -31,35 +31,15 @@ class City(Scene):
 
 
     def setup_scene(self):
-        self.directional_light = DirectionalLight()
-        self.skybox = SkyBox(self, "skybox/ame_ash", extension="bmp")
-        # self.city_map = CityMap(3, 5)
-        self.city_map = CityMap(5, 5)
-        self.add_floor(200, 200)
-        self.add_buildings("buildings_pack1")
+        wall_material = Material(map_Kd='brickwall.jpg', map_bump='brickwall_normal.jpg', Ns=100)
+        self.wall = ModelFromMesh(self, SquareMesh(material=wall_material), shader=PhongShader('phong_normal_map'))
 
-    def add_floor(self, w, h):
-        floor_material = Material(map_Kd="floor.jpg")
-        self.floor = ModelFromMesh(self, SquareMesh(material=floor_material), shader=PhongShader())
-        self.floor.M.rotate([1, 0, 0], glm.radians(-90))
-        self.floor.M.scale([w, 1, h])
-        self.floor.mesh.textureCoords *= 20
-        self.floor.update()
-        self.models.append(self.floor)
-
-    def add_buildings(self, pack):
-        towers, roads, roads_h = self.city_map.generate_city(pack, "road/horizontal_road_scaled.obj", "road/road_scaled.obj", self)
-        self.models.extend(towers)
-        self.models.append(roads)
-        self.models.append(roads_h)
+        self.models.append(self.wall)
 
     def draw(self, framebuffer=False):
         if not framebuffer:
             # clear the screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-
-            # draw the skybox
-            self.skybox.draw()        
 
         for model in self.models:
             model.draw()
@@ -70,8 +50,10 @@ class City(Scene):
             for index, light in enumerate(self.lights):
                 self.imgui_light_settings(light, index)
 
-            self.imgui_light_settings(self.directional_light, "directional light")
-            self.imgui_model_settings(self.floor, "floor")
+            self.imgui_light_settings(self.directional_light, 'directional light')
+
+            for index, model in enumerate(self.models):
+                self.imgui_model_settings(model, index)
 
             imgui.show_metrics_window()
 
@@ -86,6 +68,7 @@ class City(Scene):
             changed, light.position = imgui.drag_float3("position", *light.position)
         if hasattr(light, 'direction'):
             changed, light.direction = imgui.drag_float3("direction", *light.direction)
+
         changed, light.Ia = imgui.color_edit3("Ia", *light.Ia)
         changed, light.Id = imgui.color_edit3("Id", *light.Id)
         changed, light.Is = imgui.color_edit3("Is", *light.Is)
@@ -131,8 +114,7 @@ class City(Scene):
         imgui.pop_id()
         imgui.end()
 
-
 if __name__ == "__main__":
-    sandbox = City()
+    sandbox = Sandbox()
 
     sandbox.run()

@@ -40,8 +40,6 @@ class ModelLoader:
                 map_Ks = m.properties.get(('file', 2), None)
                 map_Ns = m.properties.get(('file', 7), None)
 
-                print(m.properties)
-
                 material = Material(
                     Ka=np.array(m.properties['ambient'], dtype=np.float32),
                     Kd=np.array(m.properties['diffuse'], dtype=np.float32),
