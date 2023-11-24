@@ -2,7 +2,6 @@ import OpenGL.GL as gl
 import imgui
 import numpy as np
 import glm
-import os
 
 from scene import Scene
 from model import ModelFromMesh, CompModel, ModelFromObjInstanced
@@ -15,13 +14,13 @@ from skybox import SkyBox
 from environment_map import EnvironmentMap, EnvironmentShader
 from texture import Texture
 from material import Material
+from city_map import CityMap
+from light import DirectionalLight
 
 class City(Scene):
 
     def __init__(self):
         Scene.__init__(self, 1200, 800, "City")
-
-        # self.lights.append(LightSource(self))
 
         self.setup_scene()
 
@@ -32,10 +31,11 @@ class City(Scene):
 
 
     def setup_scene(self):
+        self.directional_light = DirectionalLight()
         self.skybox = SkyBox(self, "skybox/ame_ash", extension="bmp")
-        self.add_floor(100, 100)
-        self.add_buildings(10, 10, "buildings_pack1")
-        self.add_roads(10, 10)
+        self.city_map = CityMap(3, 5)
+        # self.add_floor(100, 100)
+        self.add_buildings("buildings_pack1")
 
     def add_floor(self, w, h):
         self.floor = ModelFromMesh(self, SquareMesh(), shader=PhongShader())
@@ -43,36 +43,10 @@ class City(Scene):
         self.floor.M.scale([w, 1, h])
         self.models.append(self.floor)
 
-    def add_buildings(self, num_rows, num_cols, pack):
-        # get all obj files in the models folder
-        objs = []
-        for file in os.listdir(f"models/{pack}/"):
-            if file.endswith(".obj"):
-                objs.append(f"{pack}/{file}")
-
-        towers = []
-
-        for obj in objs:
-            towers.append(Towers(self, obj, num_instances=100))
-
-        building_models = []
-        for i in range(num_rows):
-            for j in range(num_cols):
-                towers[np.random.randint(0, len(towers))].add_tower(i, j)
-
-        for tower in towers:
-            self.models.append(tower)
-
-    def add_roads(self, num_rows, num_cols):
-        road_shader = PhongShaderInstanced()
-        road_model = ModelFromObjInstanced(self, "road/road.obj", shader=road_shader, num_instances=num_rows * num_cols)        
-        road_model.M.rotate([0, 1, 0], glm.radians(90))
-
-        for i in range(num_cols):
-            for j in range(num_rows):
-                road_shader.add_offset(np.array([(j) * -10, 0, (i + 0.5) * 20]))
-
-        self.models.append(road_model)
+    def add_buildings(self, pack):
+        towers, roads = self.city_map.generate_city(pack, "road/road.obj", self)
+        self.models.extend(towers)
+        self.models.append(roads)
 
     def draw(self, framebuffer=False):
         if not framebuffer:
@@ -91,8 +65,7 @@ class City(Scene):
             for index, light in enumerate(self.lights):
                 self.imgui_light_settings(light, index)
 
-            for index, model in enumerate(self.models):
-                self.imgui_model_settings(model, index)
+            self.imgui_light_settings(self.directional_light, "directional light")
 
             imgui.show_metrics_window()
 
@@ -103,7 +76,10 @@ class City(Scene):
         imgui.begin(f"Light Source {index}")
 
         # create a slider for the light position
-        changed, light.position = imgui.drag_float3("position", *light.position)
+        if hasattr(light, 'position'):
+            changed, light.position = imgui.drag_float3("position", *light.position)
+        if hasattr(light, 'direction'):
+            changed, light.direction = imgui.drag_float3("direction", *light.direction)
         changed, light.Ia = imgui.color_edit3("Ia", *light.Ia)
         changed, light.Id = imgui.color_edit3("Id", *light.Id)
         changed, light.Is = imgui.color_edit3("Is", *light.Is)
@@ -149,31 +125,6 @@ class City(Scene):
         imgui.pop_id()
         imgui.end()
 
-
-class Tower(CompModel):
-
-    def __init__(self, scene, file, col, row):
-        model_loader = ModelLoader()
-        self.row_width = 10
-        self.col_width = 10
-
-        building_meshes = model_loader.load_model(file, generate_normals=True, flip_uvs=True, flip_winding=False, optimize_meshes=True)
-        building_models = []
-        for mesh in building_meshes:
-            building_models.append(ModelFromMesh(scene, mesh, shader=PhongShader()))         
-            building_models[-1].M.translate([col * self.col_width, 0, row * self.row_width])
-    
-        CompModel.__init__(self, scene, building_models)
-
-class Towers(ModelFromObjInstanced):
-
-    def __init__(self, scene, file, num_instances=10):
-        self.shader = PhongShaderInstanced()
-        self.offsets = []
-        ModelFromObjInstanced.__init__(self, scene, file, shader=self.shader, num_instances=num_instances)
-
-    def add_tower(self, offset_x, offset_z):
-        self.shader.add_offset(np.array([offset_x * 20, 0, offset_z * 10], 'f'))
 
 if __name__ == "__main__":
     sandbox = City()

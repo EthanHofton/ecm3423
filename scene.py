@@ -74,7 +74,8 @@ class Scene():
         # class variables
         self.models = []
         self.lights = []
-        self.camera = Camera3d(width/height)
+        self.directional_light = None
+        self.camera = Camera3d(width/height, z_far=1000)
         self.delta_time = 0.
 
     def key_callback(self, window, key, scancode, action, mods):

@@ -38,6 +38,9 @@ class ModelLoader:
                 # load map_Ks
                 # map_Ks = m.properties['file', 2] if m.properties['file', 2] else None
                 map_Ks = m.properties.get(('file', 2), None)
+                map_Ns = m.properties.get(('file', 7), None)
+
+                print(m.properties)
 
                 material = Material(
                     Ka=np.array(m.properties['ambient'], dtype=np.float32),
@@ -46,6 +49,7 @@ class ModelLoader:
                     Ns=np.array(m.properties['shininess'], dtype=np.float32),
                     map_Kd=map_Kd,
                     map_Ks=map_Ks,
+                    map_Ns=map_Ns,
                     # map_bump=map_bump,
                 )
 

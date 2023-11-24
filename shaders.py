@@ -221,6 +221,7 @@ class BaseShaderProgram:
         texture_unit = self.bind_material_texture(model.mesh.material.map_Kd, 'material.map_Kd', 'material.use_map_Kd', texture_unit)
         texture_unit = self.bind_material_texture(model.mesh.material.map_Ks, 'material.map_Ks', 'material.use_map_Ks', texture_unit)
         texture_unit = self.bind_material_texture(model.mesh.material.map_bump, 'material.map_bump', 'material.use_map_bump', texture_unit)
+        texture_unit = self.bind_material_texture(model.mesh.material.map_Ns, 'material.map_Ns', 'material.use_map_Ns', texture_unit)
 
         return texture_unit
 
@@ -263,6 +264,7 @@ class PhongShader(BaseShaderProgram):
         self.add_uniform('PVM')
         self.add_uniform('VM')
         self.add_uniform('VMiT')
+        self.add_uniform('viewPos')
 
         # material
         self.add_uniform('material.alpha')
@@ -270,6 +272,11 @@ class PhongShader(BaseShaderProgram):
         self.add_uniform('material.Kd')
         self.add_uniform('material.Ks')
         self.add_uniform('material.Ns')
+
+        self.add_uniform('dir_light.dir')
+        self.add_uniform('dir_light.Ia')
+        self.add_uniform('dir_light.Id')
+        self.add_uniform('dir_light.Is')
 
         # light
         self.add_uniform('light_count')
@@ -300,6 +307,9 @@ class PhongShader(BaseShaderProgram):
         # set the PVM matrix uniform
         self.uniforms['VMiT'].bind(np.linalg.inv(np.matmul(V, M))[:3, :3].transpose())
 
+        # set the view position in view space
+        self.uniforms['viewPos'].bind_vector(unhomog(np.dot(V, homog(model.scene.camera.position()))))
+
         # bind the textures
         self.bind_textures(model)
 
@@ -307,19 +317,27 @@ class PhongShader(BaseShaderProgram):
         self.bind_material_uniforms(model.mesh.material)
 
         # bind the light properties
-        self.bind_light_uniforms(model.scene.lights, V)
+        self.bind_light_uniforms(model.scene.directional_light, model.scene.lights, V)
 
-    def bind_light_uniforms(self, lights, V):
+    def bind_light_uniforms(self, dir_light, lights, V):
+        # bind directional light
+        self.uniforms['dir_light.dir'].bind_vector(unhomog(np.dot(V, homog(dir_light.direction))))
+        self.uniforms['dir_light.Ia'].bind_vector(np.array(dir_light.Ia, 'f'))
+        self.uniforms['dir_light.Id'].bind_vector(np.array(dir_light.Id, 'f'))
+        self.uniforms['dir_light.Is'].bind_vector(np.array(dir_light.Is, 'f'))
 
+        # check if we have too many lights
         if len(lights) > self.max_lights:
             print(f'(E) Warning: Max light count of {self.max_lights} exceeded')
 
+        # bind point lights
         for index, light in enumerate(lights):
             self.uniforms[f'lights[{index}].position'].bind_vector(unhomog(np.dot(V, homog(light.position))))
             self.uniforms[f'lights[{index}].Ia'].bind_vector(np.array(light.Ia, 'f'))
             self.uniforms[f'lights[{index}].Id'].bind_vector(np.array(light.Id, 'f'))
             self.uniforms[f'lights[{index}].Is'].bind_vector(np.array(light.Is, 'f'))
 
+        # bind light count
         self.uniforms['light_count'].bind_int(len(lights))
 
     def bind_material_uniforms(self, material):

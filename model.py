@@ -69,6 +69,10 @@ class BaseModel():
             if isinstance(self.mesh.material.map_bump, str):
                 self.mesh.material.map_bump = Texture(self.mesh.material.map_bump)
 
+        if self.mesh.material.map_Ns is not None:
+            if isinstance(self.mesh.material.map_Ns, str):
+                self.mesh.material.map_Ns = Texture(self.mesh.material.map_Ns)
+
         if self.mesh.textures is not None:
             for texture in self.mesh.textures:
                 if isinstance(texture, str):

@@ -9,11 +9,13 @@ in vec2 texCoord;
 out vec3 position_view_space;   // the position of the vertex in view coordinates
 out vec3 normal_view_space;     // the normal of the vertex in view coordinates
 out vec2 fragment_texCoord;
+out vec3 viewPos_view_space;    // the position of the camera in view coordinates
 
 //=== uniforms
 uniform mat4 PVM; 	// the Perspective-View-Model matrix is received as a Uniform
 uniform mat4 VM; 	// the View-Model matrix is received as a Uniform
 uniform mat3 VMiT;  // The inverse-transpose of the view model matrix, used for normals
+uniform vec3 viewPos; // The position of the camera in view space
 
 
 void main() {
@@ -30,4 +32,7 @@ void main() {
 
     // 3. forward the texture coordinates.
     fragment_texCoord = texCoord;
+
+    // 4. forward the view position in view space
+    viewPos_view_space = viewPos;
 }

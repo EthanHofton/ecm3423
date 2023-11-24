@@ -1,0 +1,17 @@
+# Blender MTL File: 'Building_05.blend'
+# Material Count: 1
+
+newmtl M_Arnold_Building_05
+Ns 199.999995
+Ka 1.000000 1.000000 1.000000
+Kd 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump Textures_05_Normal.png
+map_Kd Textures_05_BaseColor.png
+map_Ns Textures_05_Roughness.png
+map_Ks Textures_05_Metallic.png
+refl Textures_05_Metallic.png

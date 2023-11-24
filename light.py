@@ -27,3 +27,21 @@ class LightSource:
         '''
         if position is not None:
             self.position = position
+
+
+class DirectionalLight():
+    '''
+    A directional light source. It is assumed that the light source is at infinity.
+    '''
+    def __init__(self, direction=[-1.,-1.,0.], Ia=[0.2,0.2,0.2], Id=[0.9,0.9,0.9], Is=[0.5,0.5,0.5]):
+        '''
+        :param direction: The direction of the light source
+        :param Ia: The ambiant illumination it provides (may not be dependent on the light source itself)
+        :param Id: The diffuse illumination
+        :param Is: The specular illumination
+        :param visible: Whether the light should be represented as a sphere in the scene (default: False)
+        '''
+        self.direction = np.array(direction, 'f')
+        self.Ia = Ia
+        self.Id = Id
+        self.Is = Is

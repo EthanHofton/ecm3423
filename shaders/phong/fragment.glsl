@@ -4,6 +4,7 @@
 in vec3 position_view_space;   // the position in view coordinates of this fragment
 in vec3 normal_view_space;     // the normal in view coordinates to this fragment
 in vec2 fragment_texCoord;
+in vec3 viewPos_view_space;    // the position of the camera in view coordinates
 
 
 //=== 'out' attributes are the output image, usually only one for the colour of each pixel
@@ -18,9 +19,11 @@ struct Material {
     float alpha; // alpha value of the material
     sampler2D map_Kd;
     sampler2D map_Ks;
+    sampler2D map_Ns;
 
     int use_map_Kd;
     int use_map_Ks;
+    int use_map_Ns;
 };
 
 struct Mat {
@@ -88,11 +91,8 @@ void main() {
     dl.Id = vec3(0.8, 0.8, 0.8);
     dl.Is = vec3(0.8, 0.8, 0.8);
 
-    vec3 ambient = vec3(0.0);
-    vec3 diffuse = vec3(0.0);
-    vec3 specular = vec3(0.0);
     vec3 normal = normalize(normal_view_space);
-    vec3 viewDir = normalize(-position_view_space);
+    vec3 viewDir = normalize(viewPos_view_space - position_view_space);
 
     Mat m;
     m.Ka = material.Ka;
@@ -107,6 +107,10 @@ void main() {
 
     if (material.use_map_Ks == 1) {
         m.Ks = texture(material.map_Ks, fragment_texCoord).rgb;
+    }
+
+    if (material.use_map_Ns == 1) {
+        m.Ns = texture(material.map_Ns, fragment_texCoord).r;
     }
 
     vec3 finalColor = directional_light(dl, m, normal, viewDir);

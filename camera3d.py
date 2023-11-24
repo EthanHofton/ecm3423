@@ -91,6 +91,9 @@ class Camera3d:
         self._mouse_last_x = x
         self._mouse_last_y = y
 
+    def position(self):
+        return self._pos
+
     def key_input(self, window, dt):
         if not self._active:
             return
