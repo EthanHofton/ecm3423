@@ -5,6 +5,7 @@ import numpy as np
 from towers import Towers
 from model import ModelFromObjInstanced
 from shaders import PhongShaderInstanced
+from coordinate_system import CoordinateSystem
 
 class CityMap:
     def __init__(self, b_n, building_type):
@@ -59,19 +60,18 @@ class CityMap:
     def generate_city(self, building_pack, road_model_file, road_model_horez_file, scene):
         towers = self._get_buildings(building_pack, scene)
 
-        road_x_scale = 20
-        road_z_scale = 20
-
-        vertical_road_shader = PhongShaderInstanced()
+        vertical_road_shader = PhongShaderInstanced('phong_instanced_normal_map')
         vertical_road_count = np.count_nonzero(np.array(self.map) == 0)
         vertical_roads = ModelFromObjInstanced(scene, road_model_file, shader=vertical_road_shader, num_instances=vertical_road_count)
-        vertical_roads.M.scale([road_x_scale + 1, 1, road_z_scale])
+        vertical_roads.M.translate([0, CoordinateSystem.ROAD_OFFSET, 0])
+        vertical_roads.M.scale([CoordinateSystem.X_SEP + 2, 1, CoordinateSystem.Y_SEP])
 
-        horizontal_road_shader = PhongShaderInstanced()
+        horizontal_road_shader = PhongShaderInstanced('phong_instanced_normal_map')
         horizontal_road_count = np.count_nonzero(np.array(self.map) == -1)
         horizontal_roads = ModelFromObjInstanced(scene, road_model_horez_file, shader=horizontal_road_shader, num_instances=horizontal_road_count)
         # add a small offset to the horizontal roads to avoid z-fighting/ gap between intersecting roads
-        horizontal_roads.M.scale([road_x_scale, 1, road_z_scale])
+        horizontal_roads.M.translate([0, CoordinateSystem.ROAD_OFFSET , 0])
+        horizontal_roads.M.scale([CoordinateSystem.X_SEP, 1, CoordinateSystem.Y_SEP])
 
         print("========= Generating city... =========")
         print("Vertical Road count:", vertical_road_count)
@@ -90,18 +90,14 @@ class CityMap:
                 j_remapped = j - self.n // 2
                 if self.map[i][j] != 0:
                     if self.map[i][j] == -1:
-                        horizontal_road_shader.add_offset(np.array([i_remapped * 20, 0, j_remapped * 20]))
+                        horizontal_road_shader.add_offset(CoordinateSystem.get_world_pos(i_remapped, j_remapped))
                     else:
                         towers[self.map[i][j] - 1].add_tower(i_remapped, j_remapped)
                 else:
-                    vertical_road_shader.add_offset(np.array([i_remapped * 20, 0, j_remapped * 20]))
+                    vertical_road_shader.add_offset(CoordinateSystem.get_world_pos(i_remapped, j_remapped))
 
 
         print("========= Done =========")
-
-        # translate the roads up
-        vertical_roads.M.translate([0, 0.1, 0])
-        horizontal_roads.M.translate([0, 0.1, 0])
 
         return towers, vertical_roads, horizontal_roads
 

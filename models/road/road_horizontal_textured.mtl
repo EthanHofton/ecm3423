@@ -1,0 +1,28 @@
+# Blender MTL File: 'road_textured.blend'
+# Material Count: 2
+
+newmtl Material.001
+Ns 28.248813
+Ka 1.000000 1.000000 1.000000
+Kd 0.021979 0.021979 0.021979
+Ks 0.114173 0.114173 0.114173
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump G_class_asphalt1_Normal.png
+map_Kd G_class_asphalt1_Albedo.png
+map_Ns G_class_asphalt1_Roughness.png
+
+newmtl Material.002
+Ns 224.999983
+Ka 1.000000 1.000000 1.000000
+Kd 0.800000 0.800000 0.800000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Bump white_lane_Normal.png
+map_Kd white_lane_Albedo.png
+map_Ns white_lane_Roughness.png

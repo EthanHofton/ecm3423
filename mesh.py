@@ -11,7 +11,7 @@ class Mesh:
     Simple class to hold a mesh data. For now we will only focus on vertices, faces (indices of vertices for each face)
     and normals.
     '''
-    def __init__(self, vertices=None, faces=None, normals=None, textureCoords=None, material=None):
+    def __init__(self, vertices=None, faces=None, normals=None, textureCoords=None, material=None, tangents=None, bitangents=None):
         '''
         Initialises a mesh object.
         :param vertices: A numpy array containing all vertices
@@ -26,8 +26,8 @@ class Mesh:
         self.colors = None
         self.textureCoords = textureCoords
         self.textures = []
-        self.tangents = None
-        self.bitangents = None
+        self.tangents = tangents
+        self.bitangents = bitangents
 
         if vertices is not None:
             print('Creating mesh')

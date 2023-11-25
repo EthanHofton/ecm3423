@@ -379,8 +379,8 @@ class PhongShaderNormalMap(PhongShader):
         PhongShader.__init__(self, name='phong_normal_map')
 
 class PhongShaderInstanced(PhongShader):
-    def __init__(self):
-        PhongShader.__init__(self, name='phong_instanced')
+    def __init__(self, name='phong_instanced'):
+        PhongShader.__init__(self, name=name)
         self.add_uniform("M")
         self.add_uniform("PV")
         self.add_uniform("V")
@@ -400,3 +400,27 @@ class PhongShaderInstanced(PhongShader):
 
         for index, offset in enumerate(self.offsets):
             self.uniforms[f'offsets[{index}]'].bind_vector(offset)
+
+
+class PhongShaderNormalMapInstancedMatrices(PhongShader):
+    def __init__(self, name='phong_instanced_normal_map_matricies'):
+        PhongShader.__init__(self, name=name)
+        self.add_uniform("M")
+        self.add_uniform("PV")
+        self.add_uniform("V")
+        self.matricies = []
+
+    def add_matrix(self, M):
+        self.add_uniform(f'matricies[{len(self.matricies)}]')
+        self.uniforms[f'matricies[{len(self.matricies)}]'].link(self.program)
+        self.matricies.append(M)
+
+    def bind(self, model, M):
+        PhongShader.bind(self, model, M)
+
+        self.uniforms["M"].bind(M)
+        self.uniforms["V"].bind(np.array(model.scene.camera.view(), 'f'))
+        self.uniforms["PV"].bind(np.matmul(model.scene.camera.projection(), model.scene.camera.view()))
+
+        for index, M in enumerate(self.matricies):
+            self.uniforms[f'matricies[{index}]'].bind(np.array(M.matrix, 'f'))

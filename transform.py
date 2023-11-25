@@ -47,6 +47,15 @@ class TransformMatrix():
     def set_rotation(self, rotation):
         self.matrix = glm.mat4_cast(rotation)
 
+    def set_rotation(self, axis, angle):
+        if axis == [0.0, 0.0, 0.0]:
+            return
+
+        if angle == 0.0:
+            return
+
+        self.matrix = glm.rotate(glm.mat4(1.0), angle, axis)
+
     def set_scale(self, scale):
         self.matrix[0][0] = scale[0]
         self.matrix[1][1] = scale[1]

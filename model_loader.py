@@ -6,7 +6,7 @@ from material import Material
 
 class ModelLoader:
 
-    def load_model(self, path, generate_normals=True, flip_uvs=True, flip_winding=False, optimize_meshes=True):
+    def load_model(self, path, generate_normals=True, flip_uvs=True, flip_winding=False, optimize_meshes=True, generate_tangents=True):
         meshes = []
         processing = assimp.postprocess.aiProcess_Triangulate | assimp.postprocess.aiProcess_JoinIdenticalVertices
         if flip_uvs:
@@ -15,6 +15,8 @@ class ModelLoader:
             processing = processing | assimp.postprocess.aiProcess_FlipWindingOrder
         if generate_normals:
             processing = processing | assimp.postprocess.aiProcess_GenSmoothNormals
+        if generate_tangents:
+            processing = processing | assimp.postprocess.aiProcess_CalcTangentSpace
 
         if optimize_meshes:
             processing = processing | assimp.postprocess.aiProcess_OptimizeMeshes
@@ -27,18 +29,20 @@ class ModelLoader:
                 normals = mesh.normals if mesh.normals.any() else None
                 m = mesh.material
 
+                tangents = mesh.tangents if mesh.tangents.any() else None
+                bitangents = mesh.bitangents if mesh.bitangents.any() else None
+
                 if texCoords is not None:
                     texCoords = texCoords[0][:, :2]
 
                 # print(m.properties)
 
                 # load map_Kd
-                # map_Kd = m.properties['file', 1] if m.properties['file', 1] else None
                 map_Kd = m.properties.get(('file', 1), None)
                 # load map_Ks
-                # map_Ks = m.properties['file', 2] if m.properties['file', 2] else None
                 map_Ks = m.properties.get(('file', 2), None)
                 map_Ns = m.properties.get(('file', 7), None)
+                map_bump = m.properties.get(('file', 5), None)
 
                 material = Material(
                     Ka=np.array(m.properties['ambient'], dtype=np.float32),
@@ -48,7 +52,7 @@ class ModelLoader:
                     map_Kd=map_Kd,
                     map_Ks=map_Ks,
                     map_Ns=map_Ns,
-                    # map_bump=map_bump,
+                    map_bump=map_bump,
                 )
 
                 # create model
@@ -57,7 +61,9 @@ class ModelLoader:
                     normals=normals,
                     textureCoords=texCoords,
                     faces=faces,
-                    material=material
+                    material=material,
+                    tangents=tangents,
+                    bitangents=bitangents
                 )
                 meshes.append(m)
 

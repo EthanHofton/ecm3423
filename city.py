@@ -4,7 +4,7 @@ import numpy as np
 import glm
 
 from scene import Scene
-from model import ModelFromMesh, CompModel, ModelFromObjInstanced
+from model import ModelFromMesh, CompModel, ModelFromObjInstanced, ModelFromObj
 from mesh import CubeMesh, SquareMesh, SphereMesh
 from shaders import PhongShader, BaseShaderProgram, PhongShaderInstanced
 from light import LightSource
@@ -16,6 +16,8 @@ from texture import Texture
 from material import Material
 from city_map import CityMap
 from light import DirectionalLight
+from coordinate_system import CoordinateSystem
+from car import Car, CarInstanced
 
 class City(Scene):
 
@@ -32,28 +34,43 @@ class City(Scene):
 
     def setup_scene(self):
         self.directional_light = DirectionalLight()
-        self.skybox = SkyBox(self, "skybox/ame_ash", extension="bmp")
+        self.skybox = SkyBox(self, "skybox/blue_clouds", extension="jpg")
+        # self.skybox = SkyBox(self, "skybox/yellow_clouds", extension="jpg")
         # self.city_map = CityMap(3, 5)
-        self.city_map = CityMap(5, 5)
+        self.city_map = CityMap(5, 1)
         self.add_floor(200, 200)
         self.add_buildings("buildings_pack1")
 
+        self.add_car('police/police.obj')
+
     def add_floor(self, w, h):
-        floor_material = Material(map_Kd="floor.jpg")
-        self.floor = ModelFromMesh(self, SquareMesh(material=floor_material), shader=PhongShader())
+        floor_material = Material(map_Kd="brickwall.jpg", map_bump="brickwall_normal.jpg")
+        self.floor = ModelFromMesh(self, SquareMesh(material=floor_material), shader=PhongShader('phong_normal_map'))
         self.floor.M.rotate([1, 0, 0], glm.radians(-90))
         self.floor.M.scale([w, 1, h])
-        self.floor.mesh.textureCoords *= 20
+        self.floor.mesh.textureCoords *= 120
         self.floor.update()
         self.models.append(self.floor)
 
     def add_buildings(self, pack):
-        towers, roads, roads_h = self.city_map.generate_city(pack, "road/horizontal_road_scaled.obj", "road/road_scaled.obj", self)
+        towers, roads, roads_h = self.city_map.generate_city(pack, "road/road_horizontal_textured.obj", "road/road_textured.obj", self)
         self.models.extend(towers)
         self.models.append(roads)
         self.models.append(roads_h)
 
+    def add_car(self, file):
+        positions1 = [(0, 0), (0, 1), (1,1), (1,0)]
+        positions2 = [(0,0), (1,1), (4,1), (4,4), (1,4), (0,4)]
+        car = CarInstanced(self, file, num_instance=2)
+        car.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
+        car.add_car(positions1)
+        car.add_car(positions2)
+        self.car = car
+        self.models.append(car)
+
     def draw(self, framebuffer=False):
+        self.car.update(self.delta_time)
+
         if not framebuffer:
             # clear the screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)

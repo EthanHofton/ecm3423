@@ -17,9 +17,11 @@ class ImageWrapper:
 
     def data(self, format=gl.GL_RGBA):
         if format == gl.GL_RGBA:
+            print('Converting image to RGBA')
             img = self.img.convert('RGBA')
             return np.array(img.getdata())
         elif format == gl.GL_RGB:
+            print("Converting image to RGB")
             img = self.img.convert('RGB')
             return np.array(img.getdata())
         else:
