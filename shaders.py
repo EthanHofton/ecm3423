@@ -292,20 +292,33 @@ class PhongShader(BaseShaderProgram):
 
         # spot lights
         self.add_uniform('spot_light_count')
-        for i in range(self.max_spot_lights):
-            self.add_uniform('spot_lights[{}].position'.format(i))
-            self.add_uniform('spot_lights[{}].direction'.format(i))
-            self.add_uniform('spot_lights[{}].Ia'.format(i))
-            self.add_uniform('spot_lights[{}].Id'.format(i))
-            self.add_uniform('spot_lights[{}].Is'.format(i))
+        # for i in range(self.max_spot_lights):
+        #     self.add_uniform('spot_lights[{}].position'.format(i))
+        #     self.add_uniform('spot_lights[{}].direction'.format(i))
+        #     self.add_uniform('spot_lights[{}].Ia'.format(i))
+        #     self.add_uniform('spot_lights[{}].Id'.format(i))
+        #     self.add_uniform('spot_lights[{}].Is'.format(i))
 
-            self.add_uniform('spot_lights[{}].constant'.format(i))
-            self.add_uniform('spot_lights[{}].linear'.format(i))
-            self.add_uniform('spot_lights[{}].quadratic'.format(i))
-            self.add_uniform('spot_lights[{}].intensity'.format(i))
+        #     self.add_uniform('spot_lights[{}].constant'.format(i))
+        #     self.add_uniform('spot_lights[{}].linear'.format(i))
+        #     self.add_uniform('spot_lights[{}].quadratic'.format(i))
+        #     self.add_uniform('spot_lights[{}].intensity'.format(i))
 
-            self.add_uniform('spot_lights[{}].cutoff'.format(i))
-            self.add_uniform('spot_lights[{}].outer_cutoff'.format(i))
+        #     self.add_uniform('spot_lights[{}].cutoff'.format(i))
+        #     self.add_uniform('spot_lights[{}].outer_cutoff'.format(i))
+        self.add_uniform('spot_light.position'.format(i))
+        self.add_uniform('spot_light.direction'.format(i))
+        self.add_uniform('spot_light.Ia'.format(i))
+        self.add_uniform('spot_light.Id'.format(i))
+        self.add_uniform('spot_light.Is'.format(i))
+
+        self.add_uniform('spot_light.constant'.format(i))
+        self.add_uniform('spot_light.linear'.format(i))
+        self.add_uniform('spot_light.quadratic'.format(i))
+        self.add_uniform('spot_light.intensity'.format(i))
+
+        self.add_uniform('spot_light.cutoff'.format(i))
+        self.add_uniform('spot_light.outer_cutoff'.format(i))
 
 
     def bind(self, model, M):
@@ -366,18 +379,30 @@ class PhongShader(BaseShaderProgram):
         self.uniforms['light_count'].bind_int(len(point_lights))
 
         # bind spot lights
-        for index, light in enumerate(spot_lights):
-            self.uniforms[f'spot_lights[{index}].position'].bind_vector(unhomog(np.dot(V, homog(light.position))))
-            self.uniforms[f'spot_lights[{index}].direction'].bind_vector(unhomog(np.dot(V, homog(light.direction))))
-            self.uniforms[f'spot_lights[{index}].Ia'].bind_vector(np.array(light.Ia, 'f'))
-            self.uniforms[f'spot_lights[{index}].Id'].bind_vector(np.array(light.Id, 'f'))
-            self.uniforms[f'spot_lights[{index}].Is'].bind_vector(np.array(light.Is, 'f'))
-            self.uniforms[f'spot_lights[{index}].constant'].bind_float(light.constant)
-            self.uniforms[f'spot_lights[{index}].linear'].bind_float(light.linear)
-            self.uniforms[f'spot_lights[{index}].quadratic'].bind_float(light.quadratic)
-            self.uniforms[f'spot_lights[{index}].intensity'].bind_float(light.intensity)
-            self.uniforms[f'spot_lights[{index}].cutoff'].bind_float(np.radians(light.cutoff))
-            self.uniforms[f'spot_lights[{index}].outer_cutoff'].bind_float(np.radians(light.outer_cutoff))
+        # for index, light in enumerate(spot_lights):
+        #     self.uniforms[f'spot_lights[{index}].position'].bind_vector(unhomog(np.dot(V, homog(light.position))))
+        #     self.uniforms[f'spot_lights[{index}].direction'].bind_vector(unhomog(np.dot(V, homog(light.direction))))
+        #     self.uniforms[f'spot_lights[{index}].Ia'].bind_vector(np.array(light.Ia, 'f'))
+        #     self.uniforms[f'spot_lights[{index}].Id'].bind_vector(np.array(light.Id, 'f'))
+        #     self.uniforms[f'spot_lights[{index}].Is'].bind_vector(np.array(light.Is, 'f'))
+        #     self.uniforms[f'spot_lights[{index}].constant'].bind_float(light.constant)
+        #     self.uniforms[f'spot_lights[{index}].linear'].bind_float(light.linear)
+        #     self.uniforms[f'spot_lights[{index}].quadratic'].bind_float(light.quadratic)
+        #     self.uniforms[f'spot_lights[{index}].intensity'].bind_float(light.intensity)
+        #     self.uniforms[f'spot_lights[{index}].cutoff'].bind_float(np.radians(light.cutoff))
+        #     self.uniforms[f'spot_lights[{index}].outer_cutoff'].bind_float(np.radians(light.outer_cutoff))
+        light = spot_lights[0]
+        self.uniforms[f'spot_light.position'].bind_vector(unhomog(np.dot(V, homog(light.position))))
+        self.uniforms[f'spot_light.direction'].bind_vector(unhomog(np.dot(V, homog(light.direction))))
+        self.uniforms[f'spot_light.Ia'].bind_vector(np.array(light.Ia, 'f'))
+        self.uniforms[f'spot_light.Id'].bind_vector(np.array(light.Id, 'f'))
+        self.uniforms[f'spot_light.Is'].bind_vector(np.array(light.Is, 'f'))
+        self.uniforms[f'spot_light.constant'].bind_float(light.constant)
+        self.uniforms[f'spot_light.linear'].bind_float(light.linear)
+        self.uniforms[f'spot_light.quadratic'].bind_float(light.quadratic)
+        self.uniforms[f'spot_light.intensity'].bind_float(light.intensity)
+        self.uniforms[f'spot_light.cutoff'].bind_float(np.radians(light.cutoff))
+        self.uniforms[f'spot_light.outer_cutoff'].bind_float(np.radians(light.outer_cutoff))
 
         # bind light count
         self.uniforms['spot_light_count'].bind_int(len(spot_lights))

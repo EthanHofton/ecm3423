@@ -98,15 +98,16 @@ def frustumMatrix(l,r,t,b,n,f):
 
 # Homogeneous coordinates helpers
 def homog(v):
-    return np.hstack([v,1])
+    return np.array(np.hstack([v,1]), 'f')
 
 def unhomog(vh):
-    return vh[:-1]/vh[-1]
+    return np.array(vh[:-1]/vh[-1], 'f')
 
 def matmul(L):
     R = L[0]
     for M in L[1:]:
         R = np.matmul(R,M)
+    R.astype('f')
     return R
 
 def calculate_face_normal(vertices):

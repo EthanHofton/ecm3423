@@ -79,8 +79,9 @@ uniform Material material;
 uniform PointLight lights[MAX_LIGHTS];
 uniform int light_count;
 
-uniform SpotLight spot_lights[MAX_SPOT_LIGHTS];
-uniform int spot_light_count;
+// uniform SpotLight spot_lights[MAX_SPOT_LIGHTS];
+// uniform int spot_light_count;
+uniform SpotLight spot_light;
 
 uniform DirLight dir_light;
 
@@ -106,7 +107,7 @@ vec3 point_light(PointLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_v
     lambertian = clamp(lambertian, 0.0, 1.0);
 
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.Ns);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), m.Ns);
     spec = clamp(spec, 0.0, 1.0);
 
     float dist = length(l.position - position_view_space);
@@ -121,34 +122,39 @@ vec3 point_light(PointLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_v
     return ambient + diffuse + specular;
 }
 
-vec3 spot_light(SpotLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_view_space) {
+vec3 spot_light_calc(SpotLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_view_space) {
     // lighting calc same as point light
     vec3 lightDir = normalize(l.position - position_view_space);
     float lambertian = max(dot(lightDir, normal), 0.0);
     lambertian = clamp(lambertian, 0.0, 1.0);
 
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.Ns);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), m.Ns);
     spec = clamp(spec, 0.0, 1.0);
 
     // spot light with soft edges
     float theta = dot(lightDir, normalize(-l.direction));
     float epsilon = l.cutoff - l.outer_cutoff;
     float intensity = clamp((theta - l.outer_cutoff) / epsilon, 0.0, 1.0);
+    if (theta > l.cutoff) {
+        intensity = 1.0;
+    } else {
+        intensity = 0.0;
+    }
 
     // attenuation
     float dist = length(l.position - position_view_space);
     float attenuation = 1.0 / (l.constant + l.linear * dist + l.quadratic * (dist * dist));    
-    attenuation *= intensity;
     attenuation *= l.intensity;
     attenuation = clamp(attenuation, 0.0, 1.0);
+    attenuation = 1;
     
     // final color
     vec3 ambient =  (l.Ia * m.Ka)              * attenuation;
     vec3 diffuse =  (l.Id * m.Kd * lambertian) * attenuation;
     vec3 specular = (l.Is * m.Ks * spec)       * attenuation;
 
-    return ambient + diffuse + specular;
+    return ambient + (diffuse * intensity) + specular * (intensity);
 }
 
 void main() {
@@ -178,14 +184,16 @@ void main() {
         m.Ns = texture(material.map_Ns, fragment_texCoord).r;
     }
 
-    vec3 finalColor = directional_light(dir_light, m, normal, viewDir);
-    for (int i = 0; i < light_count; ++i) {
-        finalColor += point_light(lights[i], m, normal, viewDir, position_view_space);
-    }
+    vec3 finalColor = vec3(0.0);
+    // vec3 finalColor = directional_light(dir_light, m, normal, viewDir);
+    // for (int i = 0; i < light_count; ++i) {
+    //     finalColor += point_light(lights[i], m, normal, viewDir, position_view_space);
+    // }
 
-    for (int i = 0; i < spot_light_count; ++i) {
-        finalColor += spot_light(spot_lights[i], m, normal, viewDir, position_view_space);
-    }
+    // for (int i = 0; i < spot_light_count; ++i) {
+    //     finalColor += spot_light(spot_lights[i], m, normal, viewDir, position_view_space);
+    // }
+    finalColor += spot_light_calc(spot_light, m, normal, viewDir, position_view_space);
     
     final_color = vec4(finalColor, material.alpha);
 }

@@ -104,7 +104,7 @@ vec3 point_light(PointLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_v
     lambertian = clamp(lambertian, 0.0, 1.0);
 
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.Ns);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), m.Ns);
     spec = clamp(spec, 0.0, 1.0);
 
     float dist = length(l.position - position_view_space);
@@ -126,7 +126,7 @@ vec3 spot_light(SpotLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_vie
     lambertian = clamp(lambertian, 0.0, 1.0);
 
     vec3 reflectDir = reflect(-lightDir, normal);
-    float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.Ns);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), m.Ns);
     spec = clamp(spec, 0.0, 1.0);
 
     // spot light with soft edges

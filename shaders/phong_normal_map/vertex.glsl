@@ -18,6 +18,7 @@ uniform mat4 PVM; 	// the Perspective-View-Model matrix is received as a Uniform
 uniform mat4 VM; 	// the View-Model matrix is received as a Uniform
 uniform mat3 VMiT;  // The inverse-transpose of the view model matrix, used for normals
 uniform vec3 viewPos; // The position of the camera in view space
+uniform mat4 M;
 
 void main() {
     // 1. first, we transform the position using PVM matrix.
