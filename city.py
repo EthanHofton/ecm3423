@@ -11,7 +11,7 @@ from light import LightSource, SpotLight
 from model_loader import ModelLoader
 from fbo import Framebuffer, FramebufferTexture
 from skybox import SkyBox
-from environment_map import EnvironmentMap, EnvironmentShader
+from environment_map import EnvironmentMap, EnvironmentShader, EnvironmentShaderRefrection
 from texture import Texture
 from material import Material
 from city_map import CityMap
@@ -108,6 +108,17 @@ class City(Scene):
         self.dyno.M.translate(CoordinateSystem.get_world_pos(-4, -2))
         self.models.append(self.dyno)
 
+        self.tank_env_map = EnvironmentMap(width=1024, height=1024)
+
+        self.tank_env_shader_refractive = EnvironmentShaderRefrection(map=self.tank_env_map)
+        self.tank_env_shader_reflective = EnvironmentShader(map=self.skybox.cube_map)
+        self.tank = ModelFromObj(self, 'tank/tank.obj', shader=self.tank_env_shader)
+        # self.tank = ModelFromMesh(self, SphereMesh(), shader=self.tank_env_shader)
+        self.tank.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
+        self.tank.M.translate(CoordinateSystem.get_world_pos(-2, -4))
+        self.tank.M.translate([0, 2, 0])
+        self.models.append(self.tank)
+
     def update_police_lights(self, dt):
         self.police_light_timer += dt
 
@@ -146,7 +157,11 @@ class City(Scene):
             self.imgui_windows()
 
     def draw_reflections(self):
-        pass
+        self.skybox.draw()
+        # for model in self.models:
+        #     if model == self.tank:
+        #         continue
+        #     model.draw()
 
     def update(self):
         for car in self.cars:
@@ -154,11 +169,16 @@ class City(Scene):
 
         self.update_police_lights(self.delta_time)
         self.update_player_spotlight()
+        # self.tank_env_map.update(self, self.tank)
 
     def imgui_windows(self):
         show_lighting_settings(self)
         show_scene_settings(self)
         imgui.show_metrics_window()
+        # imgui.begin("test")
+        # changed, self.tank_env_shader.refractive_index_from = imgui.slider_float("refractive index from", self.tank_env_shader.refractive_index_from, 1.0, 2.0)
+        # changed, self.tank_env_shader.refractive_index_to = imgui.slider_float("refractive index to", self.tank_env_shader.refractive_index_to, 1.0, 2.0)
+        # imgui.end()
 
 
 if __name__ == "__main__":

@@ -20,6 +20,9 @@ police_car_settings_red_light_open = False
 police_car_settings_blue_light_open = False
 camera_settings_open = False
 
+environment_map_settings_open = False
+selected_env_map_option = 2
+
 def show_lighting_settings(scene):
     imgui.begin("Lighting Settings")
     
@@ -162,6 +165,16 @@ def show_scene_settings(scene):
 
         if imgui.button("Update projection"):
             scene.camera._update_projection()
+
+    global environment_map_settings_open
+    environment_map_settings_open, _ = imgui.collapsing_header("Environment Map")
+    global selected_env_map_option
+
+    if environment_map_settings_open:
+
+        options = ["Dynamic Reflective", "Dynamic Refractive", "Static Reflective", "Static Refractive"]
+        changed, selected_env_map_option= imgui.combo("type", selected_env_map_option, options)
+        print(selected_env_map_option)
 
     imgui.end()
 

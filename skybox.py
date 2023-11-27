@@ -24,9 +24,10 @@ class SkyBoxShader(BaseShaderProgram):
 class SkyBox(ModelFromMesh):
 
     def __init__(self, scene, name, files=None, extension='jpg'):
+        self.cube_map = CubeMap("skybox_sampler", name=name, files=files, extension=extension)
         ModelFromMesh.__init__(self, 
                                scene,
-                               CubeMesh(texture=CubeMap("skybox_sampler", name=name, files=files, extension=extension)),
+                               CubeMesh(texture=self.cube_map),
                                name='skybox',
                                shader=SkyBoxShader()
                                )

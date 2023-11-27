@@ -9,38 +9,39 @@ import matutils as mu
 
 class EnvironmentShader(BaseShaderProgram):
 
-    def __init__(self, name='environment', map=None):
+    def __init__(self, name='environment_reflect', map=None):
         BaseShaderProgram.__init__(self, name=name)
 
-        self.add_uniform('VM')
-        self.add_uniform('VMiT')
-        self.add_uniform('VT')
         self.add_uniform('env_map')
+        self.add_uniform('M')
+        self.add_uniform('viewPos')
 
         self.map = map
 
     def bind(self, model, M):
-        gl.glUseProgram(self.program)
+        BaseShaderProgram.bind(self, model, M)
 
-        P = model.scene.camera.projection()  # get projection matrix from the scene
-        V = model.scene.camera.view()  # get view matrix from the camera
-
-        self.uniforms['PVM'].bind(np.matmul(P, np.matmul(V, M)))
-
-        # set the PVM matrix uniform
-        self.uniforms['VM'].bind(np.matmul(V, M))
-
-        # set the PVM matrix uniform
-        self.uniforms['VMiT'].bind(np.linalg.inv(np.matmul(V, M))[:3, :3].transpose())
-
-        V = np.array(V)
-        V.reshape(4,4)
-        self.uniforms['VT'].bind(V.transpose()[:3, :3])
+        self.uniforms['M'].bind_matrix(np.array(M, dtype=np.float32))
+        self.uniforms['viewPos'].bind_vector(np.array(model.scene.camera.position(), dtype=np.float32))
 
         num_textures = self.bind_textures(model)
         if self.map is not None:
             self.map.bind(num_textures)
             self.uniforms['env_map'].bind(num_textures)
+
+class EnvironmentShaderRefrection(EnvironmentShader):
+
+    def __init__(self, name='environment_refract', map=None):
+        EnvironmentShader.__init__(self, name=name, map=map)
+
+        self.refractive_index_from = 1.0
+        self.refractive_index_to = 1.0
+        self.add_uniform('refraction_ratio')
+
+    def bind(self, model, M):
+        EnvironmentShader.bind(self, model, M)
+
+        self.uniforms['refraction_ratio'].bind_float(self.refractive_index_from / self.refractive_index_to)
 
 class EnvironmentMap(CubeMap):
 
@@ -75,24 +76,29 @@ class EnvironmentMap(CubeMap):
         for (face, fbo) in self.fbos.items():
             gl.glTexImage2D(face, 0, self.format, width, height, 0, self.format, self.type, None)
             fbo.prepare([self], [face])
+
+            # attach the depth buffer
+            fbo.attach_renderbuffer_depth()
         self.unbind()
 
     def update(self, scene, model):
-        if self._views is not None and self._last_pos is not None:
-            if self._last_pos != model.M.get_position():
-                self.calculate_camera_views(model.M.get_position())
+        # if self._views is not None and self._last_pos is not None:
+        #     if self._last_pos != model.M.get_position():
+        #         self.calculate_camera_views(model.M.get_position())
 
-        else:
-            self.calculate_camera_views(model.M.get_position())
-
+        # else:
+        #     self.calculate_camera_views(model.M.get_position())
+        self.calculate_camera_views(model.M.get_position())
         
         Pscene = scene.camera._projection
         scene.camera._projection = self.P
 
         for (face, fbo) in self.fbos.items():
             fbo.bind()
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             
             scene.camera._view = self._views[face]
+            scene.camera._camera_dirty = False
 
             scene.draw_reflections()
 

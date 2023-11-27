@@ -10,11 +10,21 @@ class Framebuffer():
         self.width = width
         self.height = height
 
+        self.depthbuffer = None
+        self.stencilbuffer = None
+        self.depthstencilbuffer = None
+
         if textures is not None:
             self.prepare(textures)
 
     def __del__(self):
         gl.glDeleteFramebuffers(1, [self.fbo])
+        if self.depthbuffer is not None:
+            gl.glDeleteRenderbuffers(1, [self.depthbuffer])
+        if self.stencilbuffer is not None:
+            gl.glDeleteRenderbuffers(1, [self.stencilbuffer])
+        if self.depthstencilbuffer is not None:
+            gl.glDeleteRenderbuffers(1, [self.depthstencilbuffer])
 
     def bind(self):
         # deal with double binding
@@ -53,6 +63,36 @@ class Framebuffer():
 
         for i, texture in enumerate(textures):
             gl.glFramebufferTexture2D(gl.GL_FRAMEBUFFER, self.attachments[i], targets[i], texture.textureid, level)
+
+        self.unbind()
+
+    def attach_renderbuffer_depth(self):
+        self.bind()
+
+        depthbuffer = gl.glGenRenderbuffers(1)
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, depthbuffer)
+        gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_DEPTH_COMPONENT, self.width, self.height)
+        gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_RENDERBUFFER, depthbuffer)
+
+        self.unbind()
+
+    def attach_renderbuffer_stencil(self):
+        self.bind()
+
+        stencilbuffer = gl.glGenRenderbuffers(1)
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, stencilbuffer)
+        gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_STENCIL_INDEX, self.width, self.height)
+        gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_STENCIL_ATTACHMENT, gl.GL_RENDERBUFFER, stencilbuffer)
+
+        self.unbind()
+
+    def attach_renderbuffer_depthstencil(self):
+        self.bind()
+
+        depthstencilbuffer = gl.glGenRenderbuffers(1)
+        gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, depthstencilbuffer)
+        gl.glRenderbufferStorage(gl.GL_RENDERBUFFER, gl.GL_DEPTH24_STENCIL8, self.width, self.height)
+        gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_STENCIL_ATTACHMENT, gl.GL_RENDERBUFFER, depthstencilbuffer)
 
         self.unbind()
 

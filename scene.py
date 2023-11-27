@@ -58,6 +58,9 @@ class Scene():
         # enable depth test for clean output (see lecture on clipping & visibility for an explanation
         gl.glEnable(gl.GL_DEPTH_TEST)
 
+        gl.glEnable(gl.GL_BLEND)
+        gl.glBlendFunc(gl.GL_SRC_ALPHA, gl.GL_ONE_MINUS_SRC_ALPHA)
+
         # set the window callbacks
         glfw.set_key_callback(self._window, self.key_callback)
         glfw.set_mouse_button_callback(self._window, self.mouse_button_callback)
