@@ -118,14 +118,22 @@ class Camera3d:
 
         if glfw.get_key(window, glfw.KEY_MINUS) == glfw.PRESS:
             self._fov -= 1. * self.scroll_speed * dt
-            self._projection = glm.perspective(glm.radians(self._fov), self._aspect_ratio, self._z_near, self._z_far)
+            self._update_projection()
 
         if glfw.get_key(window, glfw.KEY_EQUAL) == glfw.PRESS:
             self._fov += 1. * self.scroll_speed * dt
-            self._projection = glm.perspective(glm.radians(self._fov), self._aspect_ratio, self._z_near, self._z_far)
+            self._update_projection()
 
 
     # maybe do zoom out with out scroll call back ??
+
+    def _update_projection(self):
+        self._projection = glm.perspective(glm.radians(self._fov), self._aspect_ratio, self._z_near, self._z_far)
+
+    def front(self):
+        if self._camera_dirty:
+            self._update_vectors()
+        return self._front
 
     def view(self):
         if self._camera_dirty:

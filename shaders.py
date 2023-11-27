@@ -246,19 +246,18 @@ class BaseShaderProgram:
 
 class PhongShader(BaseShaderProgram):
     '''
-    This is the base class for loading and compiling the GLSL shaders.
+    This is the base class for loading and compiling the GLSL shaders. Handles the lighting and material unifroms.
     '''
     def __init__(self, name='phong'):
         '''
         Initialises the shaders
-        :param vertex_shader: the name of the file containing the vertex shader GLSL code
-        :param fragment_shader: the name of the file containing the fragment shader GLSL code
         '''
 
         BaseShaderProgram.__init__(self, name=name)
 
         self.uniforms = {}
         self.max_lights = 6
+        self.max_spot_lights = 3
 
         # MVP
         self.add_uniform('PVM')
@@ -273,12 +272,13 @@ class PhongShader(BaseShaderProgram):
         self.add_uniform('material.Ks')
         self.add_uniform('material.Ns')
 
+        # directional light
         self.add_uniform('dir_light.dir')
         self.add_uniform('dir_light.Ia')
         self.add_uniform('dir_light.Id')
         self.add_uniform('dir_light.Is')
 
-        # light
+        # point light
         self.add_uniform('light_count')
         for i in range(self.max_lights):
             self.add_uniform('lights[{}].position'.format(i))
@@ -289,6 +289,23 @@ class PhongShader(BaseShaderProgram):
             self.add_uniform('lights[{}].linear'.format(i))
             self.add_uniform('lights[{}].quadratic'.format(i))
             self.add_uniform('lights[{}].intensity'.format(i))
+
+        # spot lights
+        self.add_uniform('spot_light_count')
+        for i in range(self.max_spot_lights):
+            self.add_uniform('spot_lights[{}].position'.format(i))
+            self.add_uniform('spot_lights[{}].direction'.format(i))
+            self.add_uniform('spot_lights[{}].Ia'.format(i))
+            self.add_uniform('spot_lights[{}].Id'.format(i))
+            self.add_uniform('spot_lights[{}].Is'.format(i))
+
+            self.add_uniform('spot_lights[{}].constant'.format(i))
+            self.add_uniform('spot_lights[{}].linear'.format(i))
+            self.add_uniform('spot_lights[{}].quadratic'.format(i))
+            self.add_uniform('spot_lights[{}].intensity'.format(i))
+
+            self.add_uniform('spot_lights[{}].cutoff'.format(i))
+            self.add_uniform('spot_lights[{}].outer_cutoff'.format(i))
 
 
     def bind(self, model, M):
@@ -321,9 +338,9 @@ class PhongShader(BaseShaderProgram):
         self.bind_material_uniforms(model.mesh.material)
 
         # bind the light properties
-        self.bind_light_uniforms(model.scene.directional_light, model.scene.lights, V)
+        self.bind_light_uniforms(model.scene.directional_light, model.scene.lights, model.scene.spot_lights, V)
 
-    def bind_light_uniforms(self, dir_light, lights, V):
+    def bind_light_uniforms(self, dir_light, point_lights, spot_lights, V):
         # bind directional light
         self.uniforms['dir_light.dir'].bind_vector(unhomog(np.dot(V, homog(dir_light.direction))))
         self.uniforms['dir_light.Ia'].bind_vector(np.array(dir_light.Ia, 'f'))
@@ -331,11 +348,11 @@ class PhongShader(BaseShaderProgram):
         self.uniforms['dir_light.Is'].bind_vector(np.array(dir_light.Is, 'f'))
 
         # check if we have too many lights
-        if len(lights) > self.max_lights:
+        if len(point_lights) > self.max_lights:
             print(f'(E) Warning: Max light count of {self.max_lights} exceeded')
 
         # bind point lights
-        for index, light in enumerate(lights):
+        for index, light in enumerate(point_lights):
             self.uniforms[f'lights[{index}].position'].bind_vector(unhomog(np.dot(V, homog(light.position))))
             self.uniforms[f'lights[{index}].Ia'].bind_vector(np.array(light.Ia, 'f'))
             self.uniforms[f'lights[{index}].Id'].bind_vector(np.array(light.Id, 'f'))
@@ -346,7 +363,25 @@ class PhongShader(BaseShaderProgram):
             self.uniforms[f'lights[{index}].intensity'].bind_float(light.intensity)
 
         # bind light count
-        self.uniforms['light_count'].bind_int(len(lights))
+        self.uniforms['light_count'].bind_int(len(point_lights))
+
+        # bind spot lights
+        for index, light in enumerate(spot_lights):
+            self.uniforms[f'spot_lights[{index}].position'].bind_vector(unhomog(np.dot(V, homog(light.position))))
+            self.uniforms[f'spot_lights[{index}].direction'].bind_vector(unhomog(np.dot(V, homog(light.direction))))
+            self.uniforms[f'spot_lights[{index}].Ia'].bind_vector(np.array(light.Ia, 'f'))
+            self.uniforms[f'spot_lights[{index}].Id'].bind_vector(np.array(light.Id, 'f'))
+            self.uniforms[f'spot_lights[{index}].Is'].bind_vector(np.array(light.Is, 'f'))
+            self.uniforms[f'spot_lights[{index}].constant'].bind_float(light.constant)
+            self.uniforms[f'spot_lights[{index}].linear'].bind_float(light.linear)
+            self.uniforms[f'spot_lights[{index}].quadratic'].bind_float(light.quadratic)
+            self.uniforms[f'spot_lights[{index}].intensity'].bind_float(light.intensity)
+            self.uniforms[f'spot_lights[{index}].cutoff'].bind_float(np.radians(light.cutoff))
+            self.uniforms[f'spot_lights[{index}].outer_cutoff'].bind_float(np.radians(light.outer_cutoff))
+
+        # bind light count
+        self.uniforms['spot_light_count'].bind_int(len(spot_lights))
+
 
     def bind_material_uniforms(self, material):
         self.uniforms['material.Ka'].bind_vector(np.array(material.Ka, 'f'))

@@ -53,14 +53,7 @@ class Scene():
         # this selects the background color
         gl.glClearColor(0.7, 0.7, 1.0, 1.0)
 
-        # enable back face culling (see lecture on clipping and visibility
-        # gl.glEnable(gl.GL_CULL_FACE)
-        # gl.glCullFace(gl.GL_BACK)
-        # gl.glFrontFace(gl.GL_CCW)
-        # depending on your model, or your projection matrix, the winding order may be inverted,
-        # Typically, you see the far side of the model instead of the front one
-        # uncommenting the following line should provide an easy fix.
-        # gl.glCullFace(gl.GL_FRONT)
+        self.disable_face_culling()
 
         # enable depth test for clean output (see lecture on clipping & visibility for an explanation
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -74,9 +67,18 @@ class Scene():
         # class variables
         self.models = []
         self.lights = []
+        self.spot_lights = []
         self.directional_light = None
         self.camera = Camera3d(width/height, z_far=1000)
         self.delta_time = 0.
+
+    def enable_face_culling(self, cull_face=gl.GL_BACK, front_face=gl.GL_CCW):
+        gl.glEnable(gl.GL_CULL_FACE)
+        gl.glCullFace(cull_face)
+        gl.glFrontFace(front_face)
+
+    def disable_face_culling(self):
+        gl.glDisable(gl.GL_CULL_FACE)
 
     def key_callback(self, window, key, scancode, action, mods):
         # give imgui callbacks a chance to process the event

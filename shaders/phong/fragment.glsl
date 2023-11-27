@@ -46,6 +46,22 @@ struct PointLight {
     float intensity;
 };
 
+struct SpotLight {
+    vec3 position; // light position in view space
+    vec3 direction; // light direction in view space
+    vec3 Ia;    // ambient light properties
+    vec3 Id;    // diffuse properties of the light source
+    vec3 Is;    // specular properties of the light source
+
+    float constant;
+    float linear;
+    float quadratic;
+    float intensity;
+
+    float cutoff;
+    float outer_cutoff;
+};
+
 struct DirLight {
     vec3 dir;
     vec3 Ia;
@@ -54,10 +70,15 @@ struct DirLight {
 };
 
 #define MAX_LIGHTS 6
+#define MAX_SPOT_LIGHTS 3
 
 uniform Material material;
+
 uniform PointLight lights[MAX_LIGHTS];
 uniform int light_count;
+
+uniform SpotLight spot_lights[MAX_SPOT_LIGHTS];
+uniform int spot_light_count;
 
 uniform DirLight dir_light;
 
@@ -92,7 +113,37 @@ vec3 point_light(PointLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_v
     attenuation = clamp(attenuation, 0.0, 1.0);
     
     vec3 ambient =  (l.Ia * m.Ka)              * attenuation;
-    vec3 diffuse =  (l.Ia * m.Kd * lambertian) * attenuation;
+    vec3 diffuse =  (l.Id * m.Kd * lambertian) * attenuation;
+    vec3 specular = (l.Is * m.Ks * spec)       * attenuation;
+
+    return ambient + diffuse + specular;
+}
+
+vec3 spot_light(SpotLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_view_space) {
+    // lighting calc same as point light
+    vec3 lightDir = normalize(l.position - position_view_space);
+    float lambertian = max(dot(lightDir, normal), 0.0);
+    lambertian = clamp(lambertian, 0.0, 1.0);
+
+    vec3 reflectDir = reflect(-lightDir, normal);
+    float spec = pow(max(dot(reflectDir, viewDir), 0.0), material.Ns);
+    spec = clamp(spec, 0.0, 1.0);
+
+    // spot light with soft edges
+    float theta = dot(lightDir, normalize(-l.direction));
+    float epsilon = l.cutoff - l.outer_cutoff;
+    float intensity = clamp((theta - l.outer_cutoff) / epsilon, 0.0, 1.0);
+
+    // attenuation
+    float dist = length(l.position - position_view_space);
+    float attenuation = 1.0 / (l.constant + l.linear * dist + l.quadratic * (dist * dist));    
+    attenuation *= intensity;
+    attenuation *= l.intensity;
+    attenuation = clamp(attenuation, 0.0, 1.0);
+    
+    // final color
+    vec3 ambient =  (l.Ia * m.Ka)              * attenuation;
+    vec3 diffuse =  (l.Id * m.Kd * lambertian) * attenuation;
     vec3 specular = (l.Is * m.Ks * spec)       * attenuation;
 
     return ambient + diffuse + specular;
@@ -125,6 +176,10 @@ void main() {
     vec3 finalColor = directional_light(dir_light, m, normal, viewDir);
     for (int i = 0; i < light_count; ++i) {
         finalColor += point_light(lights[i], m, normal, viewDir, position_view_space);
+    }
+
+    for (int i = 0; i < spot_light_count; ++i) {
+        finalColor += spot_light(spot_lights[i], m, normal, viewDir, position_view_space);
     }
     
     final_color = vec4(finalColor, material.alpha);

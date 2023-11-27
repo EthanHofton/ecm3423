@@ -35,8 +35,6 @@ class ModelLoader:
                 if texCoords is not None:
                     texCoords = texCoords[0][:, :2]
 
-                # print(m.properties)
-
                 # load map_Kd
                 map_Kd = m.properties.get(('file', 1), None)
                 # load map_Ks

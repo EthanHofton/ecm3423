@@ -18,6 +18,7 @@ from city_map import CityMap
 from light import DirectionalLight
 from coordinate_system import CoordinateSystem
 from car import Car, CarInstanced
+from imgui_windows import show_lighting_settings, show_scene_settings
 
 class City(Scene):
 
@@ -25,21 +26,18 @@ class City(Scene):
         Scene.__init__(self, 1200, 800, "City")
 
         self.setup_scene()
-
-        self.trans = [0, 0, 0]
-        self.rot_axis = [0, 0, 0]
-        self.rot_angle = 0
-        self.scale = [1, 1, 1]
         
         # setup vars
         self.police_light_timer = 0
+        self.POLICE_LIGHT_TIME = 0.5
         self.red_light = True
+        self.player_spotlight = None
 
 
     def setup_scene(self):
         self.directional_light = DirectionalLight()
         self.skybox = SkyBox(self, "skybox/blue_clouds", extension="jpg")
-        # self.skybox = SkyBox(self, "skybox/yellow_clouds", extension="jpg")
+
         # self.city_map = CityMap(3, 5)
         self.city_map = CityMap(5, 5)
         self.add_floor(200, 200)
@@ -113,7 +111,7 @@ class City(Scene):
     def update_police_lights(self, dt):
         self.police_light_timer += dt
 
-        if self.police_light_timer > 0.5:
+        if self.police_light_timer > self.POLICE_LIGHT_TIME:
             self.police_light_timer = 0
             if self.red_light:
                 self.police_red_light.intensity = 1
@@ -123,13 +121,18 @@ class City(Scene):
                 self.police_blue_light.intensity = 1
             self.red_light = not self.red_light
 
+    def update_player_spotlight(self):
+        if self.player_spotlight is None:
+            return
+
+        self.player_spotlight.position = self.camera._pos
+        self.player_spotlight.direction = self.camera.front()
+
     def draw(self, framebuffer=False):
-        for car in self.cars:
-            car.update(self.delta_time)
-        self.update_police_lights(self.delta_time)
-
-
         if not framebuffer:
+            # update the scene
+            self.update()
+
             # clear the screen
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
 
@@ -140,80 +143,23 @@ class City(Scene):
             model.draw()
 
         if not framebuffer:
-
-            # update the environment map with regrards to the sphere
-            for index, light in enumerate(self.lights):
-                self.imgui_light_settings(light, index)
-
-            self.imgui_light_settings(self.directional_light, "directional light")
-            self.imgui_model_settings(self.floor, "floor")
-
-            imgui.show_metrics_window()
+            self.imgui_windows()
 
     def draw_reflections(self):
         pass
-        
-    def imgui_light_settings(self, light, index):
-        imgui.begin(f"Light Source {index}")
 
-        # create a slider for the light position
-        if hasattr(light, 'position'):
-            changed, light.position = imgui.drag_float3("position", *light.position)
-        if hasattr(light, 'direction'):
-            changed, light.direction = imgui.drag_float3("direction", *light.direction)
-        changed, light.Ia = imgui.color_edit3("Ia", *light.Ia)
-        changed, light.Id = imgui.color_edit3("Id", *light.Id)
-        changed, light.Is = imgui.color_edit3("Is", *light.Is)
+    def update(self):
+        for car in self.cars:
+            car.update(self.delta_time)
+        self.update_police_lights(self.delta_time)
+        self.update_player_spotlight()
 
-        if isinstance(light, LightSource):
-            changed, light.constant = imgui.drag_float("constant", light.constant, 0.01)
-            changed, light.linear = imgui.drag_float("linear", light.linear, 0.01)
-            changed, light.quadratic = imgui.drag_float("quadratic", light.quadratic, 0.01)
-            changed, light.intensity = imgui.drag_float("intensity", light.intensity, 0.01)
-
-        imgui.end()
-
-
-    def imgui_model_settings(self, model, index):
-        imgui.begin(f"Model {index}")
-        imgui.push_id(str(index))
-
-        imgui.text("transformation")
-
-        imgui.separator()    
-
-        changed, self.trans = imgui.drag_float3("translation", *self.trans)
-        changed, self.rot_axis = imgui.drag_float3("rotation axis", *self.rot_axis)
-        changed, self.rot_angle = imgui.drag_float("rotation angle", self.rot_angle)
-        changed, self.scale = imgui.drag_float3("scale", *self.scale)
-
-        if imgui.button("apply"):
-            model.M.translate(self.trans)
-            model.M.rotate(self.rot_axis, glm.radians(self.rot_angle))
-            model.M.scale(self.scale)
-
-        if imgui.button("reset"):
-            self.trans = [0, 0, 0]
-            self.rot_axis = [0, 0, 0]
-            self.rot_angle = 0
-            self.scale = [1, 1, 1]
-
-
-        if hasattr(model, 'mesh'):
-            imgui.text("material")
-            imgui.separator()    
-
-            changed, model.mesh.material.Ka = imgui.color_edit3("Ka", *model.mesh.material.Ka)
-            changed, model.mesh.material.Kd = imgui.color_edit3("Kd", *model.mesh.material.Kd)
-            changed, model.mesh.material.Ks = imgui.color_edit3("Ks", *model.mesh.material.Ks)
-            changed, model.mesh.material.Ns = imgui.slider_float("Ns", model.mesh.material.Ns, 0, 100)
-            changed, model.mesh.material.alpha = imgui.slider_float("alpha", model.mesh.material.alpha, 0, 1)
-
-        imgui.pop_id()
-        imgui.end()
+    def imgui_windows(self):
+        show_lighting_settings(self)
+        show_scene_settings(self)
+        imgui.show_metrics_window()
 
 
 if __name__ == "__main__":
     sandbox = City()
-
     sandbox.run()

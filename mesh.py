@@ -8,16 +8,18 @@ import numpy as np
 
 class Mesh:
     '''
-    Simple class to hold a mesh data. For now we will only focus on vertices, faces (indices of vertices for each face)
-    and normals.
+    Hold mesh data: vertices, faces, normals, bitangents, tangnets, texture coordinates, and material.
     '''
     def __init__(self, vertices=None, faces=None, normals=None, textureCoords=None, material=None, tangents=None, bitangents=None):
         '''
         Initialises a mesh object.
-        :param vertices: A numpy array containing all vertices
-        :param faces: [optional] An int array containing the vertex indices for all faces.
-        :param normals: [optional] An array of normal vectors, calculated from the faces if not provided.
-        :param material: [optional] An object containing the material information for this object
+        :param vertices: A numpy array of shape (N, 3) containing the vertices of the mesh.
+        :param faces: A numpy array of shape (N, 3) containing the faces of the mesh.
+        :param normals: A numpy array of shape (N, 3) containing the normals of the mesh.
+        :param textureCoords: A numpy array of shape (N, 2) containing the texture coordinates of the mesh.
+        :param material: A material object containing the material properties of the mesh.
+        :param tangents (optional): A numpy array of shape (N, 3) containing the tangents of the mesh.
+        :param bitangents (optional): A numpy array of shape (N, 3) containing the bitangents of the mesh.
         '''
         self.name = 'Unknown'
         self.vertices = vertices
