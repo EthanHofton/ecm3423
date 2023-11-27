@@ -1,5 +1,3 @@
-#version 330
-
 in vec3 fragment_texCoord;
 out vec4 final_color;
 

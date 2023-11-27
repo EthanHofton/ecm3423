@@ -41,14 +41,12 @@ class City(Scene):
         # self.city_map = CityMap(3, 5)
         self.city_map = CityMap(5, 5)
         self.add_floor(200, 200)
-        # self.add_buildings("buildings_pack1")
+        self.add_buildings("buildings_pack1")
 
         self.cars = []
-        # self.add_car('police/police.obj', (1, 1))
+        self.add_car('police/police.obj', (1, 1))
 
-        self.spot_lights.append(SpotLight())
-
-        # self.add_dino_scene()
+        self.add_dino_scene()
         # self.add_car('police_stealth/police_stealth.obj', (4, 4))
         # self.add_car('taxi/taxi.obj', (-1, -1))
         # self.add_car('car_white/car_white.obj', (-4, 1))
@@ -153,13 +151,13 @@ class City(Scene):
     def update(self):
         for car in self.cars:
             car.update(self.delta_time)
-        # self.update_police_lights(self.delta_time)
-        # self.update_player_spotlight()
+
+        self.update_police_lights(self.delta_time)
+        self.update_player_spotlight()
 
     def imgui_windows(self):
         show_lighting_settings(self)
         show_scene_settings(self)
-        show_light_settings(self.spot_lights[-1], "spotlight")
         imgui.show_metrics_window()
 
 

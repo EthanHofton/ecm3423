@@ -27,7 +27,9 @@ def show_lighting_settings(scene):
     dir_light_settings_open, _ = imgui.collapsing_header("Directional Light")
 
     if dir_light_settings_open:
-        if imgui.button("Daytime warm"):
+        imgui.text("Presets")
+
+        if imgui.button("Sunrise"):
             scene.directional_light.direction = (0.0, 0.0, 0.0)
             scene.directional_light.Ia = (0.2, 0.2, 0.2)
             scene.directional_light.Id = (0.8, 0.8, 0.8)
@@ -35,27 +37,41 @@ def show_lighting_settings(scene):
 
         imgui.same_line()
 
-        if imgui.button("Daytime cool"):
+        if imgui.button("Daytime walm"):
+            # bright with a slight yellow tint
             scene.directional_light.direction = (0.0, 0.0, 0.0)
             scene.directional_light.Ia = (0.2, 0.2, 0.2)
-            scene.directional_light.Id = (0.8, 0.8, 0.8)
-            scene.directional_light.Is = (0.8, 0.8, 0.8)
+            scene.directional_light.Id = (1.0, 1.0, 0.9)
+            scene.directional_light.Is = (1.0, 1.0, 0.9)
 
         imgui.same_line()
 
-        if imgui.button("Nighttime"):
+        if imgui.button("Darkness"):
             scene.directional_light.direction = (0.0, 0.0, 0.0)
             scene.directional_light.Ia = (0.0, 0.0, 0.0)
             scene.directional_light.Id = (0.0, 0.0, 0.0)
             scene.directional_light.Is = (0.0, 0.0, 0.0)
 
+        if imgui.button("Daytime cool"):
+            # bright with a slight blue tint
+            scene.directional_light.direction = (0.0, 0.0, 0.0)
+            scene.directional_light.Ia = (0.2, 0.2, 0.2)
+            scene.directional_light.Id = (0.9, 0.9, 1.0)
+            scene.directional_light.Is = (0.9, 0.9, 1.0)
+        
+        imgui.same_line()
+
+        if imgui.button("Midnight"):
+            # dark with moonlight
+            scene.directional_light.direction = (0.0, 0.0, 0.0)
+            scene.directional_light.Ia = (0.0, 0.0, 0.0)
+            scene.directional_light.Id = (0.1, 0.1, 0.2)
+            scene.directional_light.Is = (0.1, 0.1, 0.2)
+
         imgui.separator()
 
         imgui.text("Manual")
-        changed, scene.directional_light.position = imgui.drag_float3("position", *scene.directional_light.direction)
-        changed, scene.directional_light.Ia = imgui.drag_float3("Ambient", *scene.directional_light.Ia)
-        changed, scene.directional_light.Id = imgui.drag_float3("Diffuse", *scene.directional_light.Id)
-        changed, scene.directional_light.Is = imgui.drag_float3("Specular", *scene.directional_light.Is)
+        _light_settings(scene.directional_light)
 
     global skybox_settings_open
     skybox_settings_open, _ = imgui.collapsing_header("Skybox")
@@ -75,6 +91,11 @@ def show_lighting_settings(scene):
         if imgui.button("Frozen Dusk"):
             scene.skybox = SkyBox(scene, "skybox/sb_frozendusk", extension="jpg")
 
+        imgui.same_line()
+
+        if imgui.button("Night Sky"):
+            scene.skybox = SkyBox(scene, "skybox/night_sky", extension="png")
+
     global player_spotlight_settings_open
     player_spotlight_settings_open, _ = imgui.collapsing_header("Player Spotlight")
 
@@ -91,7 +112,7 @@ def show_lighting_settings(scene):
                 scene.player_spotlight = None
 
         if player_spotlight_enabled:
-            _light_settings(scene.player_spotlight, "player spotlight")
+            _light_settings(scene.player_spotlight)
 
     imgui.end()
 
@@ -107,12 +128,12 @@ def show_scene_settings(scene):
         global police_car_settings_red_light_open
         police_car_settings_red_light_open, _ = imgui.collapsing_header("Red light settings")
         if police_car_settings_red_light_open:
-            _light_settings(scene.police_red_light, "red light")
+            _light_settings(scene.police_red_light)
 
         global police_car_settings_blue_light_open
         police_car_settings_blue_light_open, _ = imgui.collapsing_header("Blue light settings")
         if police_car_settings_blue_light_open:
-            _light_settings(scene.police_blue_light, "blue light")
+            _light_settings(scene.police_blue_light)
 
     global camera_settings_open
     camera_settings_open, _ = imgui.collapsing_header("Camera")
@@ -122,9 +143,11 @@ def show_scene_settings(scene):
         changed, scene.camera._turn_speed = imgui.drag_float("turn speed", scene.camera._turn_speed, 1)
 
         # camera position
+        front = scene.camera.front()
         changed, scene.camera._pos = imgui.drag_float3("position", *scene.camera._pos)
         changed, scene.camera._yaw = imgui.drag_float("yaw", scene.camera._yaw, 0.01)
         changed, scene.camera._pitch = imgui.drag_float("pitch", scene.camera._pitch, 0.01)
+        imgui.label_text("front", f"[{front.x:.3f}, {front.y:.3f}, {front.z:.3f}]")
 
         # projection stuff
         changed, scene.camera._fov = imgui.drag_float("fov", scene.camera._fov, 0.01)
@@ -145,11 +168,11 @@ def show_scene_settings(scene):
 def show_light_settings(light, name):
     imgui.begin(f"Light Source {name}")
 
-    _light_settings(light, name)
+    _light_settings(light)
 
     imgui.end()
 
-def _light_settings(light, name):
+def _light_settings(light):
     # create a slider for the light position
     if hasattr(light, 'position'):
         changed, light.position = imgui.drag_float3("position", *light.position)

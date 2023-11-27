@@ -1,5 +1,3 @@
-#version 330
-
 //=== in attributes are read from the vertex array, one row per instance of the shader
 in vec3 position;	// the position attribute contains the vertex position
 
