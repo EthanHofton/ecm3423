@@ -40,6 +40,11 @@ struct PointLight {
     vec3 Ia;    // ambient light properties
     vec3 Id;    // diffuse properties of the light source
     vec3 Is;    // specular properties of the light source
+
+    float constant;
+    float linear;
+    float quadratic;
+    float intensity;
 };
 
 struct DirLight {
@@ -83,7 +88,9 @@ vec3 point_light(PointLight l, Mat m, vec3 normal, vec3 viewDir, vec3 position_v
     spec = clamp(spec, 0.0, 1.0);
 
     float dist = length(l.position - position_view_space);
-    float attenuation =  min(1.0/(dist*dist*0.005) + 1.0/(dist*0.05), 1.0);
+    float attenuation = 1.0 / (l.constant + l.linear * dist + l.quadratic * (dist * dist));    
+    attenuation *= l.intensity;
+    attenuation = clamp(attenuation, 0.0, 1.0);
     
     vec3 ambient =  (l.Ia * m.Ka)              * attenuation;
     vec3 diffuse =  (l.Ia * m.Kd * lambertian) * attenuation;

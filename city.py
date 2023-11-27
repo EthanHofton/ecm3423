@@ -30,6 +30,10 @@ class City(Scene):
         self.rot_axis = [0, 0, 0]
         self.rot_angle = 0
         self.scale = [1, 1, 1]
+        
+        # setup vars
+        self.police_light_timer = 0
+        self.red_light = True
 
 
     def setup_scene(self):
@@ -37,11 +41,18 @@ class City(Scene):
         self.skybox = SkyBox(self, "skybox/blue_clouds", extension="jpg")
         # self.skybox = SkyBox(self, "skybox/yellow_clouds", extension="jpg")
         # self.city_map = CityMap(3, 5)
-        self.city_map = CityMap(5, 1)
+        self.city_map = CityMap(5, 5)
         self.add_floor(200, 200)
         self.add_buildings("buildings_pack1")
 
-        self.add_car('police/police.obj')
+        self.cars = []
+        self.add_car('police/police.obj', (1, 1))
+
+        self.add_dino_scene()
+        # self.add_car('police_stealth/police_stealth.obj', (4, 4))
+        # self.add_car('taxi/taxi.obj', (-1, -1))
+        # self.add_car('car_white/car_white.obj', (-4, 1))
+        # self.add_car('car_red/car_red.obj', (3, -1))
 
     def add_floor(self, w, h):
         floor_material = Material(map_Kd="brickwall.jpg", map_bump="brickwall_normal.jpg")
@@ -58,18 +69,65 @@ class City(Scene):
         self.models.append(roads)
         self.models.append(roads_h)
 
-    def add_car(self, file):
-        positions1 = [(0, 0), (0, 1), (1,1), (1,0)]
-        positions2 = [(0,0), (1,1), (4,1), (4,4), (1,4), (0,4)]
-        car = CarInstanced(self, file, num_instance=2)
+    def add_car(self, file, offset):
+        positions_1 = [(0, 0), (0, 2.75), (2.75,2.75), (2.75,0)]
+        positions_2 = [(0, 2.75), (2.75,2.75), (2.75,0), (0, 0)]
+        positions_3 = [(2.75,2.75), (2.75,0), (0, 0), (0, 2.75)]
+        positions_4 = [(2.75,0), (0, 0), (0, 2.75), (2.75,2.75)]
+
+        car_positions = [positions_1, positions_2, positions_3, positions_4]
+        for i in range(len(car_positions)):
+            car_positions[i] = [(x + offset[0], y + offset[1]) for x, y in car_positions[i]]
+
+        car = CarInstanced(self, file, num_instance=4)
         car.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
-        car.add_car(positions1)
-        car.add_car(positions2)
-        self.car = car
+
+        for positions in car_positions:
+            car.add_car(positions)
+
+        self.cars.append(car)
         self.models.append(car)
 
+    def add_dino_scene(self):
+        # load police cars
+        self.police_car = ModelFromObj(self, 'police/police.obj', shader=PhongShader('phong_normal_map'))
+        self.police_car.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
+        self.police_car.M.translate(CoordinateSystem.get_world_pos(-2, -2))
+
+        # add colored lights to police car
+        light_pos = self.police_car.M.get_position() + [0, 0.5, 0]
+        self.police_red_light = LightSource(position=light_pos, Ia=[1, 0, 0], Id=[1, 0, 0], Is=[1, 0, 0], linear=0.2, quadratic=0.01)
+        self.police_blue_light = LightSource(position=light_pos, Ia=[0, 0, 1], Id=[0, 0, 1], Is=[0, 0, 1], linear=0.2, quadratic=0.01)
+
+        self.lights.append(self.police_blue_light)
+        self.lights.append(self.police_red_light)
+
+        self.models.append(self.police_car)
+
+        # load dino
+        self.dyno = ModelFromObj(self, 'dyno/dyno.obj', shader=PhongShader('phong_normal_map'))
+        self.dyno.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
+        self.dyno.M.translate(CoordinateSystem.get_world_pos(-4, -2))
+        self.models.append(self.dyno)
+
+    def update_police_lights(self, dt):
+        self.police_light_timer += dt
+
+        if self.police_light_timer > 0.5:
+            self.police_light_timer = 0
+            if self.red_light:
+                self.police_red_light.intensity = 1
+                self.police_blue_light.intensity = 0
+            else:
+                self.police_red_light.intensity = 0
+                self.police_blue_light.intensity = 1
+            self.red_light = not self.red_light
+
     def draw(self, framebuffer=False):
-        self.car.update(self.delta_time)
+        for car in self.cars:
+            car.update(self.delta_time)
+        self.update_police_lights(self.delta_time)
+
 
         if not framebuffer:
             # clear the screen
@@ -106,6 +164,12 @@ class City(Scene):
         changed, light.Ia = imgui.color_edit3("Ia", *light.Ia)
         changed, light.Id = imgui.color_edit3("Id", *light.Id)
         changed, light.Is = imgui.color_edit3("Is", *light.Is)
+
+        if isinstance(light, LightSource):
+            changed, light.constant = imgui.drag_float("constant", light.constant, 0.01)
+            changed, light.linear = imgui.drag_float("linear", light.linear, 0.01)
+            changed, light.quadratic = imgui.drag_float("quadratic", light.quadratic, 0.01)
+            changed, light.intensity = imgui.drag_float("intensity", light.intensity, 0.01)
 
         imgui.end()
 

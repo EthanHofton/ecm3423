@@ -285,6 +285,10 @@ class PhongShader(BaseShaderProgram):
             self.add_uniform('lights[{}].Ia'.format(i))
             self.add_uniform('lights[{}].Id'.format(i))
             self.add_uniform('lights[{}].Is'.format(i))
+            self.add_uniform('lights[{}].constant'.format(i))
+            self.add_uniform('lights[{}].linear'.format(i))
+            self.add_uniform('lights[{}].quadratic'.format(i))
+            self.add_uniform('lights[{}].intensity'.format(i))
 
 
     def bind(self, model, M):
@@ -336,6 +340,10 @@ class PhongShader(BaseShaderProgram):
             self.uniforms[f'lights[{index}].Ia'].bind_vector(np.array(light.Ia, 'f'))
             self.uniforms[f'lights[{index}].Id'].bind_vector(np.array(light.Id, 'f'))
             self.uniforms[f'lights[{index}].Is'].bind_vector(np.array(light.Is, 'f'))
+            self.uniforms[f'lights[{index}].constant'].bind_float(light.constant)
+            self.uniforms[f'lights[{index}].linear'].bind_float(light.linear)
+            self.uniforms[f'lights[{index}].quadratic'].bind_float(light.quadratic)
+            self.uniforms[f'lights[{index}].intensity'].bind_float(light.intensity)
 
         # bind light count
         self.uniforms['light_count'].bind_int(len(lights))

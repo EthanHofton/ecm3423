@@ -1,4 +1,4 @@
-# Blender MTL File: 'police.blend'
+# Blender MTL File: 'None'
 # Material Count: 1
 
 newmtl Material.001
@@ -10,7 +10,7 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 2
-map_Bump police/Mondeo_Normal.png
-map_Kd police/Mondeo_Dif.png
-map_Ns police/Mondeo_Roug.png
-map_Ks police/Mondeo_Metal.png
+map_Bump car_white/Mondeo_Normal.png
+map_Kd car_white/Mondeo_Dif.png
+map_Ns car_white/Mondeo_Roug.png
+map_Ks car_white/Mondeo_Metal.png

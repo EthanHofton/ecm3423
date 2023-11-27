@@ -18,15 +18,14 @@ class ImageWrapper:
     def data(self, format=gl.GL_RGBA):
         if format == gl.GL_RGBA:
             print('Converting image to RGBA')
-            img = self.img.convert('RGBA')
-            return np.array(img.getdata())
+            self.img = self.img.convert('RGBA')
         elif format == gl.GL_RGB:
             print("Converting image to RGB")
-            img = self.img.convert('RGB')
-            return np.array(img.getdata())
+            self.img = self.img.convert('RGB')
         else:
             raise ValueError('Format {} is not supported'.format(format))
 
+        return np.asarray(self.img, dtype=np.uint8)
 
 class Texture:
     '''
