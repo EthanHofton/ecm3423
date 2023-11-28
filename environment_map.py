@@ -29,7 +29,7 @@ class EnvironmentShader(BaseShaderProgram):
             self.map.bind(num_textures)
             self.uniforms['env_map'].bind(num_textures)
 
-class EnvironmentShaderRefrection(EnvironmentShader):
+class EnvironmentShaderRefractive(EnvironmentShader):
 
     def __init__(self, name='environment_refract', map=None):
         EnvironmentShader.__init__(self, name=name, map=map)
