@@ -1,7 +1,6 @@
 import OpenGL.GL as gl
 import OpenGL.GL.shaders as shaders
 import numpy as np
-from matutils import homog, unhomog
 import re
 
 class Uniform:

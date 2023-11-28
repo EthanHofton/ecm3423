@@ -3,7 +3,7 @@ import numpy as np
 import glm
 
 from cube_map import CubeMap
-from fbo import Framebuffer, FramebufferTexture
+from fbo import Framebuffer
 from shaders import BaseShaderProgram
 import matutils as mu
 

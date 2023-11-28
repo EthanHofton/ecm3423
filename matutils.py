@@ -109,30 +109,3 @@ def matmul(L):
         R = np.matmul(R,M)
     R.astype('f')
     return R
-
-def calculate_face_normal(vertices):
-    v1 = vertices[1] - vertices[0]
-    v2 = vertices[2] - vertices[0]
-    normal = np.cross(v1, v2)
-    return normal / np.linalg.norm(normal)
-
-def sort_faces_by_winding_order(vertex_list, face_indices):
-    sorted_faces = []
-    for face in face_indices:
-        # Get vertices for the current face
-        face_vertices = vertex_list[face]
-
-        # Calculate normal vector of the face
-        face_normal = calculate_face_normal(face_vertices)
-
-        # Determine winding order using the normal and a reference direction (e.g., [0, 0, 1])
-        reference_direction = np.array([0, 0, 1])
-        dot_product = np.dot(face_normal, reference_direction)
-
-        if dot_product < 0:
-            # Reverse the face vertices order if the dot product is negative
-            face = face[::-1]
-
-        sorted_faces.append(face)
-
-    return sorted_faces

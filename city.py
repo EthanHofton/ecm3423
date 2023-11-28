@@ -6,20 +6,17 @@ import glm
 from matutils import unhomog
 from transform import TransformMatrix
 from scene import Scene
-from model import ModelFromMesh, CompModel, ModelFromObjInstanced, ModelFromObj
-from mesh import CubeMesh, SquareMesh, SphereMesh
-from shaders import PhongShader, BaseShaderProgram, PhongShaderInstanced, PhongShaderNormalMapInstancedMatrices
-from light import LightSource, SpotLight
-from model_loader import ModelLoader
-from fbo import Framebuffer, FramebufferTexture
+from model import ModelFromMesh, ModelFromObjInstanced, ModelFromObj
+from mesh import SquareMesh
+from shaders import PhongShader, PhongShaderInstanced, PhongShaderNormalMapInstancedMatrices
+from light import LightSource
 from skybox import SkyBox
 from environment_map import EnvironmentMap, EnvironmentShader, EnvironmentShaderRefractive
-from texture import Texture
 from material import Material
 from city_map import CityMap
 from light import DirectionalLight
 from coordinate_system import CoordinateSystem
-from car import Car, CarInstanced
+from car import CarInstanced
 from imgui_windows import show_lighting_settings, show_scene_settings, show_light_settings
 
 class City(Scene):
@@ -356,7 +353,6 @@ class City(Scene):
         """
         show_lighting_settings(self)
         show_scene_settings(self)
-        imgui.show_metrics_window()
 
 if __name__ == "__main__":
     sandbox = City()

@@ -1,5 +1,3 @@
-import numpy as np
-
 from model import ModelFromObjInstanced
 from shaders import PhongShaderInstanced
 from coordinate_system import CoordinateSystem

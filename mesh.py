@@ -1,11 +1,6 @@
 from material import Material
 import numpy as np
 
-from texture import Texture
-from matutils import sort_faces_by_winding_order
-import numpy as np
-
-
 class Mesh:
     '''
     Hold mesh data: vertices, faces, normals, bitangents, tangnets, texture coordinates, and material.

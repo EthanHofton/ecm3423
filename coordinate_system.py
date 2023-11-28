@@ -1,14 +1,10 @@
 import numpy as np
 
-import numpy as np
-
 class CoordinateSystem:
     """
     Represents a coordinate system.
     """
 
-    # X_SEP = 17
-    # Y_SEP = 17
     X_SEP = 19
     Y_SEP = 19
     # road translation + road height

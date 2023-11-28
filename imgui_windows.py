@@ -6,18 +6,20 @@ import glfw
 
 from skybox import SkyBox
 from light import LightSource, SpotLight
-from environment_map import EnvironmentMap, EnvironmentShader, EnvironmentShaderRefractive
+from environment_map import EnvironmentShader, EnvironmentShaderRefractive
 from coordinate_system import CoordinateSystem
 from light import DirectionalLight
 from model import CompModel
 from model import ModelFromObj, ModelFromMesh
 from mesh import SphereMesh, CubeMesh
 
+# global variables for the model settings
 trans = [0, 0, 0]
 rot_axis = [0, 0, 0]
 rot_angle = 0
 scale = [1, 1, 1]
 
+#== Window header booleans ==#
 dir_light_settings_open = False
 skybox_settings_open = False
 
@@ -41,11 +43,21 @@ traffic_lights_settings_open = False
 traffic_lights_enabled = False
 traffic_light_lights_enabled = False
 
+#== Traffic light controls ==#
 red_offset = glm.vec3(0, 2.8, 0.31)
 green_offset = glm.vec3(0, 1.8, 0.31)
 traffic_light_offset = green_offset
 
 def show_lighting_settings(scene):
+    """
+    Displays the lighting settings window in ImGui.
+
+    Parameters:
+    - scene: The scene object containing the lighting settings.
+
+    Returns:
+    None
+    """
     imgui.begin("Lighting Settings")
     
     global dir_light_settings_open
@@ -225,6 +237,15 @@ def show_lighting_settings(scene):
     imgui.end()
 
 def show_scene_settings(scene):
+    """
+    Displays the scene settings window using ImGui.
+
+    Parameters:
+    - scene: The scene object containing the settings to be displayed.
+
+    Returns:
+    None
+    """
     imgui.begin("Scene Settings")
     
     global police_car_settings_open
