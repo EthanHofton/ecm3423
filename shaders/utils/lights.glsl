@@ -72,6 +72,7 @@ struct DirLight {
 };
 
 // max number of point lights
-#define MAX_LIGHTS 6
+// #define MAX_LIGHTS 6
+#define MAX_LIGHTS 30
 // max number of spot lights
 #define MAX_SPOT_LIGHTS 3

@@ -316,7 +316,7 @@ class PhongShader(BaseShaderProgram):
         BaseShaderProgram.__init__(self, name=name)
 
         self.uniforms = {}
-        self.max_lights = 6
+        self.max_lights = 30
         self.max_spot_lights = 3
 
         # MVP

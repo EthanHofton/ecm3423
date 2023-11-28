@@ -13,7 +13,7 @@ out mat3 TBN;                // the TBN matrix
 uniform mat4 M;
 uniform mat4 PV;
 
-uniform mat4 matricies[10];
+uniform mat4 matricies[100];
 
 #include "utils/tbn.glsl"
 

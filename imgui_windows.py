@@ -36,6 +36,15 @@ selected_model_option = 0
 goto_settings_open = False
 open_gl_settings_open = False
 
+scene_metrics_open = False
+traffic_lights_settings_open = False
+traffic_lights_enabled = False
+traffic_light_lights_enabled = False
+
+red_offset = glm.vec3(0, 2.8, 0.31)
+green_offset = glm.vec3(0, 1.8, 0.31)
+traffic_light_offset = green_offset
+
 def show_lighting_settings(scene):
     imgui.begin("Lighting Settings")
     
@@ -202,7 +211,8 @@ def show_lighting_settings(scene):
 
         if changed:
             if player_spotlight_enabled:
-                scene.player_spotlight = SpotLight()
+                # range of approx 100m
+                scene.player_spotlight = SpotLight(constant=1, linear=0.045, quadratic=0.0075)
                 scene.spot_lights.append(scene.player_spotlight)
             else:
                 scene.spot_lights.remove(scene.player_spotlight)
@@ -221,17 +231,8 @@ def show_scene_settings(scene):
     police_car_settings_open, _ = imgui.collapsing_header("Police car")
 
     if police_car_settings_open:
+        pass
         changed, scene.POLICE_LIGHT_TIME = imgui.drag_float("light time", scene.POLICE_LIGHT_TIME, 0.01)
-
-        global police_car_settings_red_light_open
-        police_car_settings_red_light_open, _ = imgui.collapsing_header("Red light settings")
-        if police_car_settings_red_light_open:
-            _light_settings(scene.police_red_light)
-
-        global police_car_settings_blue_light_open
-        police_car_settings_blue_light_open, _ = imgui.collapsing_header("Blue light settings")
-        if police_car_settings_blue_light_open:
-            _light_settings(scene.police_blue_light)
 
     global camera_settings_open
     camera_settings_open, _ = imgui.collapsing_header("Camera")
@@ -352,15 +353,21 @@ def show_scene_settings(scene):
 
     if goto_settings_open:
         if imgui.button("Goto Environment Map"):
-            scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(-2, -4) + [-0.5, 2, 0])
+            scene.camera._pos = scene.tank.M.get_position() + glm.vec3([0, 2, 0])
             scene.camera._update_vectors()
 
         if imgui.button("Goto police car"):
-            scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(-2, -2) + [-0.5, 2, 0])
+            pos = scene.police_car.shader.matricies[np.random.randint(0, len(scene.police_car.shader.matricies))].get_position()
+            scene.camera._pos = glm.vec3(pos + [-0.5, 2, 0])
             scene.camera._update_vectors()
 
         if imgui.button("Goto racing cars"):
             pos = scene.car_offsets[np.random.randint(0, len(scene.car_offsets))]
+            scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(pos[0], pos[1]) + [-0.5, 2, 0])
+            scene.camera._update_vectors()
+
+        if imgui.button("Dino Swarm"):
+            pos = scene.dyno_positions[np.random.randint(0, len(scene.dyno_positions))]
             scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(pos[0], pos[1]) + [-0.5, 2, 0])
             scene.camera._update_vectors()
 
@@ -435,6 +442,64 @@ def show_scene_settings(scene):
 
         if imgui.button("Enable VSync"):
             glfw.swap_interval(1)
+
+    global scene_metrics_open
+    scene_metrics_open, _ = imgui.collapsing_header("Scene Metrics")
+
+    if scene_metrics_open:
+        imgui.label_text("FPS", f"{(1/scene.delta_time):.2f}")
+        imgui.label_text("delta time", f"{scene.delta_time:.2f}")
+        imgui.label_text("models", f"{len(scene.models)}")
+        imgui.label_text("point lights", f"{len(scene.lights)}")
+        imgui.label_text("spot lights", f"{len(scene.spot_lights)}")
+
+    global traffic_lights_settings_open
+    traffic_lights_settings_open, _ = imgui.collapsing_header("Traffic Lights")
+
+    if traffic_lights_settings_open:
+        global traffic_lights_enabled
+        changed, traffic_lights_enabled = imgui.checkbox("enabled", traffic_lights_enabled)
+
+        if changed:
+            if traffic_lights_enabled:
+                scene.models.append(scene.traffic_light)
+            else:
+                scene.models.remove(scene.traffic_light)
+
+        if traffic_lights_enabled:
+            global traffic_light_lights_enabled
+            changed, traffic_light_lights_enabled = imgui.checkbox("lights enabled", traffic_light_lights_enabled)
+
+            if changed:
+                if traffic_light_lights_enabled:
+                    scene.lights.extend(scene.traffic_light_lights)
+                else:
+                    scene.lights = [light for light in scene.lights if light not in scene.traffic_light_lights]
+
+            if traffic_light_lights_enabled:
+                global traffic_light_offset
+
+                if imgui.button("Red"):
+                    for index, light in enumerate(scene.traffic_light_lights):
+                        traffic_light_offset = red_offset
+                        light.Id = (1, 0, 0)
+                        light.Is = (1, 0, 0)
+                        light.Ia = (1, 0, 0)
+                
+                imgui.same_line()
+
+                if imgui.button("Green"):
+                    for light in scene.traffic_light_lights:
+                        traffic_light_offset = green_offset
+                        light.Id = (0, 1, 0)
+                        light.Is = (0, 1, 0)
+                        light.Ia = (0, 1, 0)
+
+                for index, light in enumerate(scene.traffic_light_lights):
+                    tf_pos = scene.traffic_light_shader.offsets[index]
+                    light.position = glm.vec3(tf_pos[0], tf_pos[1], tf_pos[2]) + traffic_light_offset
+
+                changed, traffic_light_offset = imgui.drag_float3("offset", *traffic_light_offset)
 
     imgui.end()
 

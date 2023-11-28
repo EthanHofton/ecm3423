@@ -123,7 +123,10 @@ class CityMap:
 
         return towers, vertical_roads, horizontal_roads
 
-    def get_random_intersection(self):
+    def get_random_intersection(self, blacklist=[], depth=0):
+        if depth > 900:
+            return None
+
         if len(self.intersection_positions) == 0:
             return None
 
@@ -131,18 +134,22 @@ class CityMap:
 
         # dont allow edge intersections
         if random_x == len(self.intersection_positions) - 1:
-            return self.get_random_intersection()
+            return self.get_random_intersection(blacklist=blacklist, depth=depth + 1)
         
         if len(self.intersection_positions[random_x]) == 0:
-            return self.get_random_intersection()
+            return self.get_random_intersection(blacklist=blacklist, depth=depth + 1)
+
         random_y = random.randint(0, len(self.intersection_positions[random_x]) - 1)
 
         if len(self.intersection_positions[random_x][random_y]) == 0:
-            return self.get_random_intersection()
+            return self.get_random_intersection(blacklist=blacklist, depth=depth + 1)
         
         # dont allow edge intersections
         if random_y == len(self.intersection_positions[random_x]) - 1:
-            return self.get_random_intersection()
+            return self.get_random_intersection(blacklist=blacklist, depth=depth + 1)
+
+        if self.intersection_positions[random_x][random_y] in blacklist:
+            return self.get_random_intersection(blacklist=blacklist, depth=depth + 1)
 
         return self.intersection_positions[random_x][random_y]
 

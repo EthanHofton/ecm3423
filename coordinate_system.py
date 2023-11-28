@@ -2,8 +2,10 @@ import numpy as np
 
 class CoordinateSystem:
 
-    X_SEP = 17
-    Y_SEP = 17
+    # X_SEP = 17
+    # Y_SEP = 17
+    X_SEP = 19
+    Y_SEP = 19
     # road translation + road height
     ROAD_OFFSET = 0.1
     ROAD_HEIGHT = 0.225
