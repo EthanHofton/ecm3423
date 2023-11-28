@@ -44,8 +44,31 @@ class EnvironmentShaderRefractive(EnvironmentShader):
         self.uniforms['refraction_ratio'].bind_float(self.refractive_index_from / self.refractive_index_to)
 
 class EnvironmentMap(CubeMap):
+    """
+    A class representing an environment map.
+
+    Attributes:
+        width (int): The width of the environment map.
+        height (int): The height of the environment map.
+        fbos (dict): A dictionary mapping each face of the cube map to its corresponding framebuffer object.
+        P (numpy.ndarray): The perspective projection matrix.
+        _views (dict): A dictionary mapping each face of the cube map to its corresponding camera view matrix.
+
+    Args:
+        uniform (str): The uniform name for the environment map texture.
+        width (int): The width of the environment map. Default is 50.
+        height (int): The height of the environment map. Default is 50.
+    """
 
     def __init__(self, uniform="textureObject", width=50, height=50):
+        """
+        Initializes the EnvironmentMap object.
+
+        Args:
+            uniform (str): The uniform name for the environment map texture.
+            width (int): The width of the environment map. Default is 50.
+            height (int): The height of the environment map. Default is 50.
+        """
         CubeMap.__init__(self, uniform)
 
         self.width = width
@@ -70,7 +93,6 @@ class EnvironmentMap(CubeMap):
         # Create the perspective projection matrix using glm.frustum
         self.P = np.array(glm.frustum(left, right, bottom, top, near, far))
         self._views = None
-        self._last_pos = None
 
         self._bind()
         for (face, fbo) in self.fbos.items():
@@ -82,37 +104,54 @@ class EnvironmentMap(CubeMap):
         self.unbind()
 
     def update(self, scene, model):
-        # if self._views is not None and self._last_pos is not None:
-        #     if self._last_pos != model.M.get_position():
-        #         self.calculate_camera_views(model.M.get_position())
+        """
+        Updates the environment map based on the scene and model.
 
-        # else:
-        #     self.calculate_camera_views(model.M.get_position())
+        Args:
+            scene (Scene): The scene object.
+            model (Model): The model object.
+        """
+        # calculate the camera views based on the object position
         self.calculate_camera_views(model.M.get_position())
         
+        # store the old scene projection
         Pscene = scene.camera._projection
+        # reset the scenes projection matrix to the environment maps frustum projection
         scene.camera._projection = self.P
 
+        # loop though each face of the cube map
         for (face, fbo) in self.fbos.items():
+            # bind the fbo for the current face (sets the viewport)
             fbo.bind()
+            # clear the color and depth buffer
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
             
+            # set the camera view to the current face
             scene.camera._view = self._views[face]
             scene.camera._camera_dirty = False
 
+            # draw the reflections of the scene
             scene.draw_reflections()
 
+            # unbind the fbo (restores the viewport)
             fbo.unbind()
 
-
+        # restore the scenes projection matrix
         scene.camera._projection = Pscene
+        
+        # reset the camera view to the original view
         scene.camera._camera_dirty = True
         scene.camera._update_vectors()
 
-        self._last_pos = model.M.get_position()
-
     def calculate_camera_views(self, object_position):
-        # Define the transformations for each face according to the OpenGL convention
+        """
+        Calculates the camera views for each face of the cube map.
+
+        Args:
+            object_position (glm.vec3): The position of the object.
+        """
+        # Define the camera views for each face of the cube map
+        # Use GLM look at function to face the camera in each direction of the cube map
         views = {
             gl.GL_TEXTURE_CUBE_MAP_POSITIVE_X: glm.lookAt(object_position, object_position + glm.vec3(1, 0, 0), glm.vec3(0, -1, 0)),
             gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_X: glm.lookAt(object_position, object_position + glm.vec3(-1, 0, 0), glm.vec3(0, -1, 0)),
@@ -122,4 +161,3 @@ class EnvironmentMap(CubeMap):
             gl.GL_TEXTURE_CUBE_MAP_NEGATIVE_Z: glm.lookAt(object_position, object_position + glm.vec3(0, 0, -1), glm.vec3(0, -1, 0)),
         }
         self._views = views
-        self._last_pos = object_position

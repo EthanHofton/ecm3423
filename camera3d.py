@@ -2,7 +2,15 @@ import glm
 import glfw
 
 class Camera3d:
+    """
+    A 3D camera class for computer graphics.
 
+    Args:
+        aspect_ratio (float): The aspect ratio of the camera's view.
+        fov (float, optional): The field of view angle in degrees. Defaults to 45.
+        z_near (float, optional): The near clipping plane distance. Defaults to 0.1.
+        z_far (float, optional): The far clipping plane distance. Defaults to 100.0.
+    """
     def __init__(self, aspect_ratio, fov = 45 ,z_near = 0.1, z_far = 100.0):
         self._view = glm.mat4(1.0)
 
@@ -37,6 +45,9 @@ class Camera3d:
         self._update_vectors()
 
     def _update_vectors(self):
+        """
+        Update the camera's front, right, and up vectors based on the current yaw and pitch angles.
+        """
         front = glm.vec3(0.0, 0.0, 0.0)
         front.x = glm.cos(glm.radians(self._yaw)) * glm.cos(glm.radians(self._pitch))
         front.y = glm.sin(glm.radians(self._pitch))
@@ -49,6 +60,13 @@ class Camera3d:
         self._camera_dirty = False
 
     def translate(self, direction, delta_time=1.0):
+        """
+        Translate the camera in the specified direction.
+
+        Args:
+            direction (glm.vec3): The translation direction.
+            delta_time (float, optional): The time since the last frame. Defaults to 1.0.
+        """
         if self._active:
             velocity = self._move_speed * delta_time
             self._pos += self._front * direction.z * velocity
@@ -57,6 +75,16 @@ class Camera3d:
             self._camera_dirty = True
 
     def key_callback(self, window, key, scancode, action, mods):
+        """
+        Callback function for handling key events.
+
+        Args:
+            window: The GLFW window.
+            key: The key that was pressed or released.
+            scancode: The system-specific scancode of the key.
+            action: The action that was performed (GLFW.PRESS, GLFW.RELEASE, GLFW.REPEAT).
+            mods: Bit field describing which modifier keys were held down.
+        """
         if key == glfw.KEY_ESCAPE  and action == glfw.PRESS:
             if self._active:
                 glfw.set_input_mode(window, glfw.CURSOR, glfw.CURSOR_NORMAL)
@@ -67,6 +95,14 @@ class Camera3d:
             self._first_mouse = True
         
     def mouse_callback(self, window, x, y):
+        """
+        Callback function for handling mouse movement events.
+
+        Args:
+            window: The GLFW window.
+            x: The new x-coordinate of the mouse.
+            y: The new y-coordinate of the mouse.
+        """
         if not self._active:
             return        
 
@@ -92,9 +128,22 @@ class Camera3d:
         self._mouse_last_y = y
 
     def position(self):
+        """
+        Get the position of the camera.
+
+        Returns:
+            glm.vec3: The position of the camera.
+        """
         return self._pos
 
     def key_input(self, window, dt):
+        """
+        Handle keyboard input for moving the camera.
+
+        Args:
+            window: The GLFW window.
+            dt (float): The time since the last frame.
+        """
         if not self._active:
             return
 
@@ -124,21 +173,39 @@ class Camera3d:
             self._fov += 1. * self.scroll_speed * dt
             self._update_projection()
 
-
-    # maybe do zoom out with out scroll call back ??
-
     def _update_projection(self):
+        """
+        Update the projection matrix based on the current field of view angle.
+        """
         self._projection = glm.perspective(glm.radians(self._fov), self._aspect_ratio, self._z_near, self._z_far)
 
     def front(self):
+        """
+        Get the front vector of the camera.
+
+        Returns:
+            glm.vec3: The front vector of the camera.
+        """
         if self._camera_dirty:
             self._update_vectors()
         return self._front
 
     def view(self):
+        """
+        Get the view matrix of the camera.
+
+        Returns:
+            glm.mat4: The view matrix of the camera.
+        """
         if self._camera_dirty:
             self._update_vectors()
         return self._view
     
     def projection(self):
+        """
+        Get the projection matrix of the camera.
+
+        Returns:
+            glm.mat4: The projection matrix of the camera.
+        """
         return self._projection

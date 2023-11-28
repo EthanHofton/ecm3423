@@ -1,10 +1,8 @@
 import glfw
 import OpenGL.GL as gl
-import glm
 from imgui.integrations.glfw import GlfwRenderer
 import imgui
 from camera3d import Camera3d
-import cProfile
 
 class Scene():
 

@@ -23,8 +23,14 @@ from car import Car, CarInstanced
 from imgui_windows import show_lighting_settings, show_scene_settings, show_light_settings
 
 class City(Scene):
+    """
+    Represents a city scene in a computer graphics application.
+    """
 
     def __init__(self):
+        """
+        Initializes the City object.
+        """
         Scene.__init__(self, 1200, 800, "City")
         self.car_offsets = []
 
@@ -40,6 +46,9 @@ class City(Scene):
         self.update_tank_env_map = False
 
     def setup_scene(self):
+        """
+        Sets up the city scene by adding buildings, cars, police cars, environment map, dinos, and traffic lights.
+        """
         self.directional_light = DirectionalLight()
         self.skybox = SkyBox(self, "skybox/blue_clouds", extension="jpg")
 
@@ -55,6 +64,12 @@ class City(Scene):
         self.add_traffic_light()
 
     def add_cars(self, n):
+        """
+        Adds cars to the city scene.
+
+        Args:
+            n (int): The number of cars to add.
+        """
         self.cars = {}
         self.car_models = [
             'police_stealth/police_stealth.obj',
@@ -68,6 +83,15 @@ class City(Scene):
             self.add_car(self.car_models[i % len(self.car_models)])
 
     def _get_unoccupied_intersection(self):
+        """
+        Gets an unoccupied intersection in the city map.
+
+        Returns:
+            tuple: The coordinates of the unoccupied intersection.
+        
+        Raises:
+            Exception: If no more intersections are available.
+        """
         rand_offset = self.city_map.get_random_intersection(blacklist=self.car_offsets)
         if rand_offset is None:
             raise Exception("No more intersections available")
@@ -75,6 +99,13 @@ class City(Scene):
         return rand_offset
 
     def add_floor(self, w, h):
+        """
+        Adds a floor to the city scene.
+
+        Args:
+            w (int): The width of the floor.
+            h (int): The height of the floor.
+        """
         floor_material = Material(map_Kd="brickwall.jpg", map_bump="brickwall_normal.jpg")
         self.floor = ModelFromMesh(self, SquareMesh(material=floor_material), shader=PhongShader('phong_normal_map'))
         self.floor.M.rotate([1, 0, 0], glm.radians(-90))
@@ -84,12 +115,24 @@ class City(Scene):
         self.models.append(self.floor)
 
     def add_buildings(self, pack):
+        """
+        Adds buildings to the city scene.
+
+        Args:
+            pack (str): The name of the building pack to use.
+        """
         towers, roads, roads_h = self.city_map.generate_city(pack, "road/road_horizontal_textured.obj", "road/road_textured.obj", self)
         self.models.extend(towers)
         self.models.append(roads)
         self.models.append(roads_h)
 
     def add_car(self, file):
+        """
+        Adds a car to the city scene.
+
+        Args:
+            file (str): The file path of the car model.
+        """
         positions_1 = [(0.25, 0.25), (0.25, 2.75), (2.75,2.75), (2.75,0.25)]
         positions_2 = [(0.25, 2.75), (2.75,2.75), (2.75,0.25), (0.25, 0.25)]
         positions_3 = [(2.75,2.75), (2.75,0.25), (0.25, 0.25), (0.25, 2.75)]
@@ -119,6 +162,9 @@ class City(Scene):
         self.models.append(car)
 
     def add_police_cars(self):
+        """
+        Adds police cars to the city scene.
+        """
         # load police cars
         animation_time = np.random.uniform(1, 3)
         self.police_car = CarInstanced(self, 'police/police.obj', num_instance=3, animation_time=animation_time)
@@ -148,6 +194,9 @@ class City(Scene):
         self.models.append(self.police_car)
 
     def add_env_map(self):
+        """
+        Adds an environment map to the city scene.
+        """
         self.tank_env_map = EnvironmentMap(width=1024, height=1024)
         self.tank_shader = EnvironmentShader(map=self.skybox.cube_map)
         self.tank = ModelFromObj(self, 'tank/tank.obj', shader=self.tank_shader)
@@ -156,6 +205,12 @@ class City(Scene):
         self.models.append(self.tank)
 
     def update_police_lights(self, dt):
+        """
+        Updates the police car lights.
+
+        Args:
+            dt (float): The time since the last update.
+        """
         self.police_light_timer += dt
 
         if self.police_light_timer > self.POLICE_LIGHT_TIME:
@@ -174,6 +229,9 @@ class City(Scene):
             light.position = self.police_car.shader.matricies[index].get_position() + np.array([0, 0.5, 0])
 
     def update_player_spotlight(self):
+        """
+        Updates the player spotlight.
+        """
         if self.player_spotlight is None:
             return
 
@@ -181,6 +239,12 @@ class City(Scene):
         self.player_spotlight.direction = self.camera.front()
 
     def add_dinos(self, n):
+        """
+        Adds dinos to the city scene.
+
+        Args:
+            n (int): The number of dinos to add.
+        """
         # load dino
         swarm_size = 4
         self.dyno_shader = PhongShaderNormalMapInstancedMatrices()
@@ -209,6 +273,12 @@ class City(Scene):
                 self.dyno_shader.add_matrix(dino_matrix)
 
     def draw(self, framebuffer=False):
+        """
+        Draws the city scene.
+
+        Args:
+            framebuffer (bool): Whether to draw to a framebuffer or the screen.
+        """
         if not framebuffer:
             # update the scene
             self.update()
@@ -226,6 +296,9 @@ class City(Scene):
             self.imgui_windows()
 
     def draw_reflections(self):
+        """
+        Draws the reflections in the city scene.
+        """
         self.skybox.draw()
         for model in self.models:
             if model == self.tank:
@@ -233,6 +306,9 @@ class City(Scene):
             model.draw()
 
     def add_traffic_light(self):
+        """
+        Adds traffic lights to the city scene.
+        """
         n = 25
         self.traffic_light_shader = PhongShaderInstanced('phong_instanced_normal_map')
         self.traffic_light = ModelFromObjInstanced(self, 'traffic_light/tf.obj', shader=self.traffic_light_shader, num_instances=n)
@@ -261,6 +337,9 @@ class City(Scene):
                 count += 1
 
     def update(self):
+        """
+        Updates the city scene.
+        """
         for car in self.cars.values():
             car.update(self.delta_time)
         self.police_car.update(self.delta_time)
@@ -272,6 +351,9 @@ class City(Scene):
             self.tank_env_map.update(self, self.tank)
 
     def imgui_windows(self):
+        """
+        Displays ImGui windows for the city scene.
+        """
         show_lighting_settings(self)
         show_scene_settings(self)
         imgui.show_metrics_window()

@@ -10,24 +10,25 @@ import numpy as np
 
 class BaseModel():
 
-    def __init__(self, scene, mesh=None,primative=gl.GL_TRIANGLES,visable=True):
+    def __init__(self, scene, mesh=None, primative=gl.GL_TRIANGLES, visable=True):
+        """
+        Initializes a Model object.
 
+        Args:
+            scene (Scene): The scene to which the model belongs.
+            mesh (Mesh, optional): The mesh object associated with the model. Defaults to None.
+            primative (int, optional): The primitive type used for rendering. Defaults to gl.GL_TRIANGLES.
+            visable (bool, optional): Determines if the model is visible or not. Defaults to True.
+        """
         self.visable = visable
-
         self.scene = scene
-
         self.primative = primative
-
         self.shader = None
-
         self.mesh = mesh
         self.name = self.mesh.name
-
         self.M = TransformMatrix()
-
         self.vao = VertexArray()
         self.ibo = None
-
         self.vbos = {}
         self.attributes = {}
 

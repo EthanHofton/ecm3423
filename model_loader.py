@@ -5,6 +5,20 @@ from mesh import Mesh
 from material import Material
 
 class ModelLoader:
+    """
+    A class for loading 3D models using the Assimp library.
+
+    Args:
+        path (str): The path to the model file.
+        generate_normals (bool, optional): Whether to generate smooth normals for the model. Defaults to True.
+        flip_uvs (bool, optional): Whether to flip the texture coordinates vertically. Defaults to True.
+        flip_winding (bool, optional): Whether to flip the winding order of the faces. Defaults to False.
+        optimize_meshes (bool, optional): Whether to optimize the meshes in the model. Defaults to True.
+        generate_tangents (bool, optional): Whether to generate tangents and bitangents for the model. Defaults to True.
+
+    Returns:
+        list: A list of Mesh objects representing the loaded model.
+    """
 
     def load_model(self, path, generate_normals=True, flip_uvs=True, flip_winding=False, optimize_meshes=True, generate_tangents=True):
         meshes = []

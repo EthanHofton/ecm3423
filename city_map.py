@@ -9,6 +9,13 @@ from coordinate_system import CoordinateSystem
 
 class CityMap:
     def __init__(self, b_n, building_type):
+        """
+        Initialize the CityMap object.
+
+        Args:
+            b_n (int): Number of blocks in each dimension.
+            building_type (int): Number of different building types.
+        """
         self.b_n = b_n
         self.n = (self.b_n * 3) + 1
         self.map = [[0] * self.n for _ in range(self.n)]
@@ -23,6 +30,9 @@ class CityMap:
         self.fill_buildings()
 
     def fill_buildings(self):
+        """
+        Fill the map with buildings and roads.
+        """
         block_size = self.n // self.b_n
         road_width = 1
         self.buildings_count = self.b_n * self.b_n * self.building_type
@@ -56,10 +66,25 @@ class CityMap:
                     self.map[i][j + 1] = -1
 
     def print_map(self):
+        """
+        Print the city map.
+        """
         for row in self.map:
             print(row)
 
     def generate_city(self, building_pack, road_model_file, road_model_horez_file, scene):
+        """
+        Generate the city with roads and buildings.
+
+        Args:
+            building_pack (str): Name of the building pack.
+            road_model_file (str): File path of the vertical road model.
+            road_model_horez_file (str): File path of the horizontal road model.
+            scene (Scene): The scene object.
+
+        Returns:
+            tuple: A tuple containing towers, vertical roads, and horizontal roads.
+        """
         towers = self._get_buildings(building_pack, scene)
 
         vertical_road_shader = PhongShaderInstanced('phong_instanced_normal_map')
@@ -124,6 +149,16 @@ class CityMap:
         return towers, vertical_roads, horizontal_roads
 
     def get_random_intersection(self, blacklist=[], depth=0):
+        """
+        Get a random intersection position.
+
+        Args:
+            blacklist (list): List of positions to exclude.
+            depth (int): Recursion depth.
+
+        Returns:
+            tuple: Random intersection position.
+        """
         if depth > 900:
             return None
 
@@ -154,6 +189,16 @@ class CityMap:
         return self.intersection_positions[random_x][random_y]
 
     def _get_buildings(self, building_pack, scene):
+        """
+        Get the building models.
+
+        Args:
+            building_pack (str): Name of the building pack.
+            scene (Scene): The scene object.
+
+        Returns:
+            list: List of building models.
+        """
         objs = []
         for file in os.listdir(f"models/{building_pack}/"):
             if file.endswith(".obj"):

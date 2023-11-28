@@ -2,8 +2,34 @@ import OpenGL.GL as gl
 from texture import Texture, ImageWrapper
 
 class CubeMap(Texture):
+    """
+    Represents a cube map texture.
+
+    Args:
+        uniform (str): The uniform name for the texture.
+        name (str): The name of the cube map.
+        files (dict): A dictionary mapping cube map faces to file names.
+        wrap (int): The wrap mode for texture coordinates outside [0,1].
+        sample (int): The sampling mode for the texture.
+        format (int): The format of the texture.
+        type (int): The data type of the texture.
+        extension (str): The file extension for the cube map images.
+    """
 
     def __init__(self, uniform="textureObject", name=None, files=None, wrap=gl.GL_CLAMP_TO_EDGE, sample=gl.GL_LINEAR, format=gl.GL_RGBA, type=gl.GL_UNSIGNED_BYTE, extension='jpg'):
+        """
+        Initializes a new instance of the CubeMap class.
+
+        Args:
+            uniform (str): The uniform name for the texture.
+            name (str): The name of the cube map.
+            files (dict): A dictionary mapping cube map faces to file names.
+            wrap (int): The wrap mode for texture coordinates outside [0,1].
+            sample (int): The sampling mode for the texture.
+            format (int): The format of the texture.
+            type (int): The data type of the texture.
+            extension (str): The file extension for the cube map images.
+        """
         self.name = name
         self.format = format
         self.type = type
@@ -43,6 +69,13 @@ class CubeMap(Texture):
         self.unbind()
 
     def set(self, name, files=None):
+        """
+        Sets the cube map texture.
+
+        Args:
+            name (str): The name of the cube map.
+            files (dict): A dictionary mapping cube map faces to file names.
+        """
         if files is not None:
             self.files = files
 
@@ -58,4 +91,10 @@ class CubeMap(Texture):
             gl.glTexImage2D(key, 0, self.format, img.width(), img.height(), 0, self.format, self.type, img.data(self.format))
 
     def update(self, scene):
+        """
+        Updates the cube map texture.
+
+        Args:
+            scene: The scene to update the texture with.
+        """
         pass
