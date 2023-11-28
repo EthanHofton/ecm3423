@@ -106,6 +106,7 @@ class EnvironmentMap(CubeMap):
 
 
         scene.camera._projection = Pscene
+        scene.camera._camera_dirty = True
         scene.camera._update_vectors()
 
         self._last_pos = model.M.get_position()

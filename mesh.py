@@ -128,7 +128,7 @@ class SquareMesh(Mesh):
             self.textures.append(texture)
 
 class CubeMesh(Mesh):
-    def __init__(self, texture=None, inside=False, material=None):
+    def __init__(self, texture=None, inside=True, material=None):
         
         # vertices, normals, texture coords
         vertices = np.array([

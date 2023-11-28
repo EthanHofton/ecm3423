@@ -104,6 +104,7 @@ class BaseShaderProgram:
         '''
 
         self.name = name
+        self.MAX_DEPTH = 30
         print('Creating shader program: {}'.format(name) )
 
         if name is not None:
@@ -152,12 +153,14 @@ class BaseShaderProgram:
 
         self.compiled = False
 
-    def preprocess(self, source, version=True):
+    def preprocess(self, source, version=True, depth=0):
         """
         Preprocesses the shader source code by including other files specified by '#include' directives.
 
         Args:
             source (str): The original shader source code.
+            version (bool, optional): Whether to include the version.glsl file. Defaults to True.
+            depth (int, optional): The current depth of the recursion. Defaults to 0.
 
         Returns:
             str: The preprocessed shader source code.
@@ -166,6 +169,12 @@ class BaseShaderProgram:
             FileNotFoundError: If a file specified by an '#include' directive cannot be found.
 
         """
+
+        # Check if we have reached the maximum depth
+        if depth > self.MAX_DEPTH:
+            # Raise an error if we have reached the maximum depth
+            raise RecursionError(f'(E) Error: Maximum include depth of {self.MAX_DEPTH} exceeded for shader {self.name}. Check for circular includes.')
+
         if version:
             # Read the version.glsl file and append it to the source code
             # This adds a the glsl verison on top so that it remains consistent between all shaders
@@ -188,7 +197,7 @@ class BaseShaderProgram:
                     raise FileNotFoundError(f'(E) Error: Could not find file {filename} in shader {self.name} on line {i}')
                 # preprocess the included code
                 # WARNING: may create infinate loop if circular incldues
-                included_code = self.preprocess(included_code, version=False)
+                included_code = self.preprocess(included_code, version=False, depth=depth+1)
                 # Replace the line with the included code
                 lines[i] = included_code
 

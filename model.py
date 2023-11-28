@@ -270,3 +270,11 @@ class ModelFromObjInstanced(CompModel):
             models.append(ModelFromMeshInstanced(scene, mesh, visable=visable, shader=shader, num_instances=num_instances))
 
         CompModel.__init__(self, scene, models, visable=visable)
+
+    def set_num_instances(self, num_instances):
+        for model in self.components:
+            model.num_instances = num_instances
+
+    def add_num_instances(self, num_instances):
+        for model in self.components:
+            model.num_instances += num_instances

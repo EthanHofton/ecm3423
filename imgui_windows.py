@@ -1,5 +1,8 @@
 import imgui
 import glm
+import OpenGL.GL as gl
+import numpy as np
+import glfw
 
 from skybox import SkyBox
 from light import LightSource, SpotLight
@@ -7,6 +10,8 @@ from environment_map import EnvironmentMap, EnvironmentShader, EnvironmentShader
 from coordinate_system import CoordinateSystem
 from light import DirectionalLight
 from model import CompModel
+from model import ModelFromObj, ModelFromMesh
+from mesh import SphereMesh, CubeMesh
 
 trans = [0, 0, 0]
 rot_axis = [0, 0, 0]
@@ -26,8 +31,10 @@ camera_settings_open = False
 
 environment_map_settings_open = False
 selected_env_map_option = 2
+selected_model_option = 0
 
 goto_settings_open = False
+open_gl_settings_open = False
 
 def show_lighting_settings(scene):
     imgui.begin("Lighting Settings")
@@ -256,7 +263,7 @@ def show_scene_settings(scene):
 
     global environment_map_settings_open
     environment_map_settings_open, _ = imgui.collapsing_header("Environment Map")
-    global selected_env_map_option
+    global selected_env_map_option, selected_model_option
 
     def update_tank_shader(scene, shader):
         if isinstance(scene.tank, CompModel):
@@ -301,6 +308,44 @@ def show_scene_settings(scene):
         if selected_env_map_option == 1 or selected_env_map_option == 3:
             _, scene.tank_shader.refractive_index_from = imgui.slider_float("refractive index from", scene.tank_shader.refractive_index_from, 0.01, 3)
             _, scene.tank_shader.refractive_index_to = imgui.slider_float("refractive index to", scene.tank_shader.refractive_index_to, 0.01, 3)
+
+        options = ["Tank", "Taxi", "Car", "Dinosaur", "Sphere", "Cube"]
+        changed, selected_model_option = imgui.combo("model", selected_model_option, options)
+
+        def move_model(model):
+            model.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
+            model.M.translate(CoordinateSystem.get_world_pos(-2, -4))
+
+        if changed:
+            if selected_model_option == 0:
+                scene.models.remove(scene.tank)
+                scene.tank = ModelFromObj(scene, 'tank/tank.obj', shader=scene.tank_shader)
+                scene.models.append(scene.tank)
+            if selected_model_option == 1:
+                scene.models.remove(scene.tank)
+                scene.tank = ModelFromObj(scene, 'taxi/taxi.obj', shader=scene.tank_shader)
+                scene.models.append(scene.tank)
+            if selected_model_option == 2:
+                scene.models.remove(scene.tank)
+                scene.tank = ModelFromObj(scene, 'car_red/car_red.obj', shader=scene.tank_shader)
+                scene.models.append(scene.tank)
+            if selected_model_option == 3:
+                scene.models.remove(scene.tank)
+                scene.tank = ModelFromObj(scene, 'dyno/dyno.obj', shader=scene.tank_shader)
+                scene.models.append(scene.tank)
+            if selected_model_option == 4:
+                scene.models.remove(scene.tank)
+                scene.tank = ModelFromMesh(scene, SphereMesh(), shader=scene.tank_shader)
+                scene.models.append(scene.tank)
+            if selected_model_option == 5:
+                scene.models.remove(scene.tank)
+                scene.tank = ModelFromMesh(scene, CubeMesh(), shader=scene.tank_shader)
+                scene.models.append(scene.tank)
+
+            move_model(scene.tank)
+
+        if imgui.button("Move Model Up"):
+            scene.tank.M.translate(np.array([0, 0.5, 0], 'f'))
             
     global goto_settings_open
     goto_settings_open, _ = imgui.collapsing_header("Goto")
@@ -314,9 +359,82 @@ def show_scene_settings(scene):
             scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(-2, -2) + [-0.5, 2, 0])
             scene.camera._update_vectors()
 
-        if imgui.button("Goto racing police cars"):
-            scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(1, 1) + [-0.5, 2, 0])
+        if imgui.button("Goto racing cars"):
+            pos = scene.car_offsets[np.random.randint(0, len(scene.car_offsets))]
+            scene.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(pos[0], pos[1]) + [-0.5, 2, 0])
             scene.camera._update_vectors()
+
+    global open_gl_settings_open
+    open_gl_settings_open, _ = imgui.collapsing_header("OpenGL")
+
+    if open_gl_settings_open:
+        # wireframe
+        if imgui.button("Wireframe"):
+            scene.wireframe = not scene.wireframe
+            if scene.wireframe:
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+            else:
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+
+        imgui.separator()
+
+        if imgui.button("Cull back faces CCW"):
+            scene.enable_face_culling(gl.GL_BACK, gl.GL_CCW)
+
+        imgui.same_line()
+
+        if imgui.button("Cull back faces CW"):
+            scene.enable_face_culling(gl.GL_BACK, gl.GL_CW)
+
+        imgui.separator()
+
+        if imgui.button("Cull front faces CCW"):
+            scene.enable_face_culling(gl.GL_FRONT, gl.GL_CCW)
+
+        imgui.same_line()
+
+        if imgui.button("Cull front faces CW"):
+            scene.enable_face_culling(gl.GL_FRONT, gl.GL_CW)
+
+        imgui.separator()
+
+        if imgui.button("Disable face culling"):
+            scene.disable_face_culling()
+
+        imgui.separator()
+
+        # enable/disable depth testing
+        if imgui.button("Enable depth testing"):
+            gl.glEnable(gl.GL_DEPTH_TEST)
+
+        imgui.same_line()
+
+        if imgui.button("Disable depth testing"):
+            gl.glDisable(gl.GL_DEPTH_TEST)
+
+        imgui.separator()
+
+        # enable/disable blending
+        if imgui.button("Enable blending"):
+            gl.glEnable(gl.GL_BLEND)
+
+        imgui.same_line()
+
+        if imgui.button("Disable blending"):
+            gl.glDisable(gl.GL_BLEND)
+
+        imgui.separator()
+
+        # FPS
+        changed, scene.FPS = imgui.drag_float("FPS", scene.FPS, 1)
+
+        if imgui.button("Disable VSync"):
+            glfw.swap_interval(0)
+
+        imgui.same_line()
+
+        if imgui.button("Enable VSync"):
+            glfw.swap_interval(1)
 
     imgui.end()
 

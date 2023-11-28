@@ -19,6 +19,7 @@ class Scene():
         self.wireframe = False
         self.title = title
         self.FPS = FPS
+        self.wireframe_key = glfw.KEY_O
 
         # initialize glfw and create window
         imgui.create_context()
@@ -54,6 +55,8 @@ class Scene():
         gl.glClearColor(0.7, 0.7, 1.0, 1.0)
 
         self.disable_face_culling()
+
+        glfw.set_input_mode(self._window, glfw.CURSOR, glfw.CURSOR_DISABLED)
 
         # enable depth test for clean output (see lecture on clipping & visibility for an explanation
         gl.glEnable(gl.GL_DEPTH_TEST)
@@ -91,7 +94,7 @@ class Scene():
             # close the window
             glfw.set_window_should_close(window, True)
 
-        if key == glfw.KEY_0 and action == glfw.PRESS:
+        if key == self.wireframe_key and action == glfw.PRESS:
             self.wireframe = not self.wireframe
             if self.wireframe:
                 gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)

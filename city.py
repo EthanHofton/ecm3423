@@ -24,6 +24,7 @@ class City(Scene):
 
     def __init__(self):
         Scene.__init__(self, 1200, 800, "City")
+        self.car_offsets = []
 
         self.setup_scene()
         self.camera._pos = glm.vec3(CoordinateSystem.get_world_pos(0, 1) + [0, 3, 0])
@@ -40,19 +41,35 @@ class City(Scene):
         self.directional_light = DirectionalLight()
         self.skybox = SkyBox(self, "skybox/blue_clouds", extension="jpg")
 
-        # self.city_map = CityMap(3, 5)
         self.city_map = CityMap(5, 5)
         self.add_floor(200, 200)
         self.add_buildings("buildings_pack1")
-
-        self.cars = []
-        self.add_car('police/police.obj', (1, 1))
-
+        self.add_cars(10)
         self.add_dino_scene()
-        self.add_car('police_stealth/police_stealth.obj', (4, 4))
-        self.add_car('taxi/taxi.obj', (-1, -1))
-        self.add_car('car_white/car_white.obj', (-4, 1))
-        self.add_car('car_red/car_red.obj', (3, -1))
+
+    def add_cars(self, n):
+        self.cars = {}
+        self.car_models = [
+            'police_stealth/police_stealth.obj',
+            'taxi/taxi.obj',
+            'car_white/car_white.obj',
+            'car_red/car_red.obj',
+            'police/police.obj',
+        ]
+
+        for i in range(n):
+            self.add_car(self.car_models[i % len(self.car_models)])
+
+    def _get_unoccupied_intersection(self):
+        offset = None
+        while offset is None:
+            rand_offset = self.city_map.get_random_intersection()
+            if rand_offset not in self.car_offsets:
+                offset = rand_offset
+                self.car_offsets.append(offset)
+                break
+        return offset
+
 
     def add_floor(self, w, h):
         floor_material = Material(map_Kd="brickwall.jpg", map_bump="brickwall_normal.jpg")
@@ -69,15 +86,24 @@ class City(Scene):
         self.models.append(roads)
         self.models.append(roads_h)
 
-    def add_car(self, file, offset):
-        positions_1 = [(0, 0), (0, 2.75), (2.75,2.75), (2.75,0)]
-        positions_2 = [(0, 2.75), (2.75,2.75), (2.75,0), (0, 0)]
-        positions_3 = [(2.75,2.75), (2.75,0), (0, 0), (0, 2.75)]
-        positions_4 = [(2.75,0), (0, 0), (0, 2.75), (2.75,2.75)]
+    def add_car(self, file):
+        positions_1 = [(0.25, 0.25), (0.25, 2.75), (2.75,2.75), (2.75,0.25)]
+        positions_2 = [(0.25, 2.75), (2.75,2.75), (2.75,0.25), (0.25, 0.25)]
+        positions_3 = [(2.75,2.75), (2.75,0.25), (0.25, 0.25), (0.25, 2.75)]
+        positions_4 = [(2.75,0.25), (0.25, 0.25), (0.25, 2.75), (2.75,2.75)]
 
         car_positions = [positions_1, positions_2, positions_3, positions_4]
+
+        offset = self._get_unoccupied_intersection()
         for i in range(len(car_positions)):
             car_positions[i] = [(x + offset[0], y + offset[1]) for x, y in car_positions[i]]
+
+        if file in self.cars:
+            car = self.cars[file]
+            for positions in car_positions:
+                car.add_car(positions)
+            car.add_num_instances(4)
+            return
 
         car = CarInstanced(self, file, num_instance=4)
         car.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))
@@ -85,7 +111,7 @@ class City(Scene):
         for positions in car_positions:
             car.add_car(positions)
 
-        self.cars.append(car)
+        self.cars[file] = car
         self.models.append(car)
 
     def add_dino_scene(self):
@@ -175,7 +201,7 @@ class City(Scene):
             model.draw()
 
     def update(self):
-        for car in self.cars:
+        for car in self.cars.values():
             car.update(self.delta_time)
 
         self.update_police_lights(self.delta_time)

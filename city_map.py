@@ -12,6 +12,12 @@ class CityMap:
         self.b_n = b_n
         self.n = (self.b_n * 3) + 1
         self.map = [[0] * self.n for _ in range(self.n)]
+
+        # positions of the roads, intersections and buildings
+        self.road_positions = []
+        self.intersection_positions = []
+        self.building_positions = []
+
         self.building_type = building_type
         self.index_to_building = {}
         self.fill_buildings()
@@ -27,11 +33,7 @@ class CityMap:
                 for x in range(i * block_size, (i + 1) * block_size):
                     for y in range(j * block_size, (j + 1) * block_size):
                         if x % block_size < road_width or y % block_size < road_width:
-                            # -1 for rotated road, 0 for normal road
-                            if (x+1) % 4 == 6:
-                                self.map[x][y] = -1
-                            else:
-                                self.map[x][y] = 0
+                            self.map[x][y] = 0
                         else:
                             if self.building_type == 1:
                                 self.map[x][y] = 1  # Building type 1
@@ -82,24 +84,67 @@ class CityMap:
         self.print_map()
 
         print("========= Adding roads and buildings... =========")
+        def check_intersection(i, j):
+            if i % 3 == 0 and j % 3 == 0:
+                return True
+            return False
 
         for i in range(self.n):
+            road_positions = []
+            intersection_positions = []
+            building_positions = []
+
             for j in range(self.n):
                 # remap i and j to -n/2 to n/2
                 i_remapped = i - self.n // 2
                 j_remapped = j - self.n // 2
                 if self.map[i][j] != 0:
                     if self.map[i][j] == -1:
+                        road_positions.append((i_remapped, j_remapped))
+                        if check_intersection(i, j):
+                            intersection_positions.append((i_remapped, j_remapped))
+
                         horizontal_road_shader.add_offset(CoordinateSystem.get_world_pos(i_remapped, j_remapped))
                     else:
+                        building_positions.append((i_remapped, j_remapped))
                         towers[self.map[i][j] - 1].add_tower(i_remapped, j_remapped)
                 else:
-                    vertical_road_shader.add_offset(CoordinateSystem.get_world_pos(i_remapped, j_remapped))
-
+                    road_positions.append((i_remapped, j_remapped))
+                    if check_intersection(i, j):
+                        intersection_positions.append((i_remapped, j_remapped))
+                    
+                    vertical_road_shader.add_offset(CoordinateSystem.get_world_pos(i_remapped, j_remapped)) 
+                
+            self.road_positions.append(road_positions)
+            self.intersection_positions.append(intersection_positions)
+            self.building_positions.append(building_positions)
 
         print("========= Done =========")
 
         return towers, vertical_roads, horizontal_roads
+
+    def get_random_intersection(self):
+        if len(self.intersection_positions) == 0:
+            return None
+
+        random_x = random.randint(0, len(self.intersection_positions) - 1)
+
+        # dont allow edge intersections
+        if random_x == len(self.intersection_positions) - 1:
+            return self.get_random_intersection()
+        
+        if len(self.intersection_positions[random_x]) == 0:
+            return self.get_random_intersection()
+        random_y = random.randint(0, len(self.intersection_positions[random_x]) - 1)
+
+        if len(self.intersection_positions[random_x][random_y]) == 0:
+            return self.get_random_intersection()
+        
+        # dont allow edge intersections
+        if random_y == len(self.intersection_positions[random_x]) - 1:
+            return self.get_random_intersection()
+
+        return self.intersection_positions[random_x][random_y]
 
     def _get_buildings(self, building_pack, scene):
         objs = []

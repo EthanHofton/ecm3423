@@ -5,6 +5,5 @@ uniform samplerCube skybox_sampler;
 
 void main(void)
 {
-	vec3 fragment_texCoord = fragment_texCoord;
 	final_color = texture(skybox_sampler, fragment_texCoord);
 }

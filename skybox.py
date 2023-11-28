@@ -35,6 +35,16 @@ class SkyBox(ModelFromMesh):
         self.M.scale([10, 10, 10])
 
     def draw(self):
+        # backface culling will not work as they must be viewed from inside
+        # store the current state of backface culling
+        culling_enabled = gl.glIsEnabled(gl.GL_CULL_FACE)
+
+        if culling_enabled:
+            gl.glDisable(gl.GL_CULL_FACE)
+
         gl.glDepthMask(gl.GL_FALSE)
         ModelFromMesh.draw(self)
         gl.glDepthMask(gl.GL_TRUE)
+
+        if culling_enabled:
+            gl.glEnable(gl.GL_CULL_FACE)
