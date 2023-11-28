@@ -89,6 +89,18 @@ class City(Scene):
         self.models.append(car)
 
     def add_dino_scene(self):
+        """
+        Adds a dino scene to the city.
+
+        This function loads and positions various models, such as police cars, a dino, and a tank,
+        and adds them to the scene. It also adds colored lights to the police car.
+
+        Parameters:
+        - self: The instance of the City class.
+
+        Returns:
+        - None
+        """
         # load police cars
         self.police_car = ModelFromObj(self, 'police/police.obj', shader=PhongShader('phong_normal_map'))
         self.police_car.M.translate(np.array([0, CoordinateSystem.ROAD_OFFSET, 0], 'f'))

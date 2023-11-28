@@ -26,7 +26,7 @@ void main() {
     mat4 PVM = PV*M_combined;
     gl_Position = PVM*vec4(position,1.0f);
 
-    mat3 MiT = transpose(inverse(mat3(M)));
+    mat3 MiT = transpose(inverse(mat3(M_combined)));
 
     // 2. calculate vectors used for shading calculations
     // those will be interpolate before being sent to the

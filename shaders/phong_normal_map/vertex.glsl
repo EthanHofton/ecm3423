@@ -13,6 +13,8 @@ out mat3 TBN;                // the TBN matrix
 uniform mat4 PVM; 	// the Perspective-View-Model matrix is received as a Uniform
 uniform mat4 M;     // the Model matrix
 
+#include "utils/tbn.glsl"
+
 void main() {
     // 1. first, we transform the position using PVM matrix.
     // note that gl_Position is a standard output of the
@@ -26,13 +28,7 @@ void main() {
 
     // calculater the TBN matrix (equation found from learnOpenGL.com)
     mat3 MiT = transpose(inverse(mat3(M)));
-    vec3 N = normalize(MiT * normal);
-    vec3 T = normalize(MiT * tangent);
-    T = normalize(T - dot(T, N) * N);
-    // then retrieve perpendicular vector B with the cross product of T and N
-    vec3 B = cross(N, T);
-
-    TBN = mat3(T, B, N);
+    TBN = calc_TBN(normal, tangent, MiT);
 
     // 3. forward the texture coordinates.
     fragment_texCoord = texCoord;

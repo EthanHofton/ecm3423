@@ -6,6 +6,11 @@ in mat3 TBN; // tangent, bitangent, normal matrix
 //=== 'out' attributes are the output image, usually only one for the colour of each pixel
 out vec4 final_color;
 
+//=== includes
+#include "utils/material.glsl"
+#include "utils/lights.glsl"
+#include "utils/phong_lighting.glsl"
+
 //=== uniform variables
 uniform Material material; // material properties
 

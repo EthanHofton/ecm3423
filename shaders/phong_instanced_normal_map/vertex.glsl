@@ -15,6 +15,8 @@ uniform mat4 PV;
 
 uniform vec3 offsets[100];
 
+#include "utils/tbn.glsl"
+
 void main() {
     vec3 offset = offsets[gl_InstanceID];
     // 1. first, we transform the position using PVM matrix.
@@ -35,14 +37,8 @@ void main() {
     fragPos = vec3(M_combined*vec4(position,1.0));
 
     // calculater the TBN matrix (equation found from learnOpenGL.com)
-    mat3 MiT = transpose(inverse(mat3(M)));
-    vec3 N = normalize(MiT * normal);
-    vec3 T = normalize(MiT * tangent);
-    T = normalize(T - dot(T, N) * N);
-    // then retrieve perpendicular vector B with the cross product of T and N
-    vec3 B = cross(N, T);
-
-    TBN = mat3(T, B, N);
+    mat3 MiT = transpose(inverse(mat3(M_combined)));
+    TBN = calc_TBN(normal, tangent, MiT);
 
     // 3. forward the texture coordinates.
     fragment_texCoord = texCoord;

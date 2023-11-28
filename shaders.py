@@ -2,6 +2,7 @@ import OpenGL.GL as gl
 import OpenGL.GL.shaders as shaders
 import numpy as np
 from matutils import homog, unhomog
+import re
 
 class Uniform:
     '''
@@ -127,7 +128,7 @@ class BaseShaderProgram:
             with open(vertex_shader, 'r') as file:
                 self.vertex_shader_source = file.read()
                 
-            self.vertex_shader_source = self.preprocess_vertex(self.vertex_shader_source)
+            self.vertex_shader_source = self.preprocess(self.vertex_shader_source)
 
         # load the fragment shader GLSL code
         if fragment_shader is None:
@@ -142,7 +143,7 @@ class BaseShaderProgram:
             with open(fragment_shader, 'r') as file:
                 self.fragment_shader_source = file.read()
 
-            self.fragment_shader_source = self.preprocess_fragment(self.fragment_shader_source)
+            self.fragment_shader_source = self.preprocess(self.fragment_shader_source)
 
         # in order to simplify extension of the class in the future, we start storing uniforms in a dictionary.
         self.uniforms = {
@@ -151,13 +152,48 @@ class BaseShaderProgram:
 
         self.compiled = False
 
-    def preprocess_vertex(self, source):
-        source = self.read("utils/version.glsl") + source
-        return source
+    def preprocess(self, source, version=True):
+        """
+        Preprocesses the shader source code by including other files specified by '#include' directives.
 
-    def preprocess_fragment(self, source):
-        source = self.read("utils/version.glsl") + source
-        return source
+        Args:
+            source (str): The original shader source code.
+
+        Returns:
+            str: The preprocessed shader source code.
+        
+        Raises:
+            FileNotFoundError: If a file specified by an '#include' directive cannot be found.
+
+        """
+        if version:
+            # Read the version.glsl file and append it to the source code
+            # This adds a the glsl verison on top so that it remains consistent between all shaders
+            source = self.read("utils/version.glsl") + source
+
+        # Split the source code into lines
+        lines = source.split('\n')
+
+        # Iterate through each line
+        for i, line in enumerate(lines):
+            # Check if the line starts with '#include'
+            if line.strip().startswith('#include'):
+                # Extract the filename from the line
+                filename = re.findall(r'"([^"]*)"', line)[0]
+                try:
+                    # Read the included code from the file
+                    included_code = self.read(filename)
+                except FileNotFoundError:
+                    # Raise an error if the file cannot be found
+                    raise FileNotFoundError(f'(E) Error: Could not find file {filename} in shader {self.name} on line {i}')
+                # preprocess the included code
+                # WARNING: may create infinate loop if circular incldues
+                included_code = self.preprocess(included_code, version=False)
+                # Replace the line with the included code
+                lines[i] = included_code
+
+        # Join the lines back into a single string
+        return '\n'.join(lines)
 
     def read(self, filename):
         with open(f"shaders/{filename}", 'r') as file:
@@ -321,19 +357,7 @@ class PhongShader(BaseShaderProgram):
 
             self.add_uniform('spot_lights[{}].cutoff'.format(i))
             self.add_uniform('spot_lights[{}].outer_cutoff'.format(i))
-
-    def preprocess_fragment(self, source):
-        preprocessed = self.read("utils/version.glsl")
-        preprocessed += self.read("utils/material.glsl")
-        preprocessed += self.read("utils/lights.glsl")
-        preprocessed += self.read("utils/phong_lighting.glsl")
-        preprocessed += source
-        return preprocessed
     
-    def preprocess_vertex(self, source):
-        return super().preprocess_vertex(source)
-
-
     def bind(self, model, M):
         '''
         Call this function to enable this GLSL Program (you can have multiple GLSL programs used during rendering!)
@@ -448,7 +472,6 @@ class PhongShaderNormalMap(PhongShader):
 class PhongShaderInstanced(PhongShader):
     def __init__(self, name='phong_instanced'):
         PhongShader.__init__(self, name=name)
-        self.add_uniform("M")
         self.add_uniform("PV")
         self.add_uniform("V")
         self.offsets = []
@@ -461,7 +484,6 @@ class PhongShaderInstanced(PhongShader):
     def bind(self, model, M):
         PhongShader.bind(self, model, M)
 
-        self.uniforms["M"].bind(M)
         self.uniforms["V"].bind(np.array(model.scene.camera.view(), 'f'))
         self.uniforms["PV"].bind(np.matmul(model.scene.camera.projection(), model.scene.camera.view()))
 
@@ -472,7 +494,6 @@ class PhongShaderInstanced(PhongShader):
 class PhongShaderNormalMapInstancedMatrices(PhongShader):
     def __init__(self, name='phong_instanced_normal_map_matricies'):
         PhongShader.__init__(self, name=name)
-        self.add_uniform("M")
         self.add_uniform("PV")
         self.add_uniform("V")
         self.matricies = []
@@ -485,7 +506,6 @@ class PhongShaderNormalMapInstancedMatrices(PhongShader):
     def bind(self, model, M):
         PhongShader.bind(self, model, M)
 
-        self.uniforms["M"].bind(M)
         self.uniforms["V"].bind(np.array(model.scene.camera.view(), 'f'))
         self.uniforms["PV"].bind(np.matmul(model.scene.camera.projection(), model.scene.camera.view()))
 

@@ -6,6 +6,11 @@ in vec3 normal_world_space; // the normal of the vertex in world space
 //=== 'out' attributes are the output image, usually only one for the colour of each pixel
 out vec4 final_color;
 
+//=== includes
+#include "utils/material.glsl"
+#include "utils/lights.glsl"
+#include "utils/phong_lighting.glsl"
+
 //=== uniform variables
 uniform Material material; // material properties
 
