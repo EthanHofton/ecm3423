@@ -49,10 +49,10 @@ class City(Scene):
         self.add_car('police/police.obj', (1, 1))
 
         self.add_dino_scene()
-        # self.add_car('police_stealth/police_stealth.obj', (4, 4))
-        # self.add_car('taxi/taxi.obj', (-1, -1))
-        # self.add_car('car_white/car_white.obj', (-4, 1))
-        # self.add_car('car_red/car_red.obj', (3, -1))
+        self.add_car('police_stealth/police_stealth.obj', (4, 4))
+        self.add_car('taxi/taxi.obj', (-1, -1))
+        self.add_car('car_white/car_white.obj', (-4, 1))
+        self.add_car('car_red/car_red.obj', (3, -1))
 
     def add_floor(self, w, h):
         floor_material = Material(map_Kd="brickwall.jpg", map_bump="brickwall_normal.jpg")

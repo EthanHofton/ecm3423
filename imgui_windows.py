@@ -6,6 +6,7 @@ from light import LightSource, SpotLight
 from environment_map import EnvironmentMap, EnvironmentShader, EnvironmentShaderRefractive
 from coordinate_system import CoordinateSystem
 from light import DirectionalLight
+from model import CompModel
 
 trans = [0, 0, 0]
 rot_axis = [0, 0, 0]
@@ -258,8 +259,11 @@ def show_scene_settings(scene):
     global selected_env_map_option
 
     def update_tank_shader(scene, shader):
-        for model in scene.tank.components:
-            model.bind_shader(shader)
+        if isinstance(scene.tank, CompModel):
+            for model in scene.tank.components:
+                model.bind_shader(shader)
+        else:
+            scene.tank.bind_shader(shader)
 
     if environment_map_settings_open:
 
