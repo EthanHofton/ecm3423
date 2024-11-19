@@ -1,5 +1,9 @@
 # ecm3423
 
+Coursework for Copmuter Graphics, achived 98%.
+
+Video submission: https://youtu.be/RICAq6wHT5I
+
 # (Optional) Run in environment
 
 For Mac:
